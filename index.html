@@ -184,15 +184,46 @@ body {
   background: #1c2128;
   border: 1px solid var(--border);
   color: var(--text);
-  padding: 6px 10px;
   border-radius: 6px;
   font-size: 12px;
   z-index: 100;
   opacity: 0;
   transition: opacity 0.15s;
   white-space: nowrap;
+  display: flex;
+  align-items: stretch;
+  gap: 0;
+  overflow: hidden;
+  padding: 0;
 }
 #tooltip.visible { opacity: 1; }
+#tooltip .tip-date {
+  padding: 6px 10px;
+  display: flex;
+  align-items: center;
+}
+#tooltip .tip-dots {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  padding: 4px 8px;
+  background: var(--bg);
+  border-left: 1px solid var(--border);
+}
+.tip-dot {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 18px;
+  height: 18px;
+  border-radius: 50%;
+  font-size: 13px;
+  font-weight: 700;
+  font-family: 'JetBrains Mono', monospace;
+  color: #fff;
+  -webkit-text-stroke: 2px rgba(0,0,0,0.5);
+  paint-order: stroke fill;
+}
 
 /* ── Feed peek indicator ───────────────────────────────────────── */
 #feed-peek {
@@ -581,17 +612,10 @@ function buildCalendar() {
 
           cell.addEventListener('mouseenter', () => {
             const ent = MOCK_DATA[cell.dataset.date];
-            let text = formatDateNice(cell.dataset.date);
-            if (ent) {
-              const tasks = [];
-              if (ent.painting) tasks.push('painting');
-              if (ent.coding) tasks.push('coding');
-              if (ent.writing) tasks.push('writing');
-              text += ' — ' + tasks.join(', ');
-            } else {
-              text += ' — no tasks';
-            }
-            tooltip.textContent = text;
+            const dateStr = formatDateNice(cell.dataset.date);
+            // Build tooltip: date text + colored dots
+            tooltip.innerHTML = '<span class="tip-date">' + dateStr + '</span>' +
+              '<span class="tip-dots">' + tipDot('painting', ent) + tipDot('coding', ent) + tipDot('writing', ent) + '</span>';
             tooltip.classList.add('visible');
           });
           cell.addEventListener('mousemove', (e) => {
@@ -696,6 +720,24 @@ for (let i = 0; i < 365; i++) {
   }
 
   feedSection.appendChild(card);
+}
+
+// ── Tooltip dot helper ───────────────────────────────────────────
+function tipDot(task, entry) {
+  const level = entry ? (entry[task] || 0) : 0;
+  let bg;
+  if (level === 0) {
+    bg = 'var(--cell-empty)';
+  } else {
+    // Lerp from cell-empty (37,44,53) to task color, same as calendar cells
+    const [, cr, cg, cb] = TASK_COLORS[task].match(/(\d+),\s*(\d+),\s*(\d+)/);
+    const t = level / 2;
+    const r = Math.round(37 + (+cr - 37) * t);
+    const g = Math.round(44 + (+cg - 44) * t);
+    const b = Math.round(53 + (+cb - 53) * t);
+    bg = `rgb(${r},${g},${b})`;
+  }
+  return `<span class="tip-dot" style="background:${bg}">${level}</span>`;
 }
 
 // ── Helpers ──────────────────────────────────────────────────────
