@@ -1,0 +1,582 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>publish daily</title>
+<style>
+/* ── Reset & Base ──────────────────────────────────────────────── */
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+:root {
+  --bg: #0d1117;
+  --surface: #161b22;
+  --border: #30363d;
+  --text: #e6edf3;
+  --text-muted: #7d8590;
+  --cell-empty: #252c35;
+  --cell-gap: 5px;
+  --cell-size: clamp(13px, 1.3vw, 22px);
+  --cell-radius: 3px;
+  --feed-width: 590px;
+}
+
+html { background: var(--bg); color: var(--text); }
+body {
+  font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Helvetica, Arial, sans-serif;
+  font-size: 14px;
+  line-height: 1.5;
+}
+
+/* ── Calendar Section ──────────────────────────────────────────── */
+#calendar-section {
+  min-height: calc(100vh - 60px);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: 40px 20px 20px;
+}
+
+#calendar-section h1 {
+  font-size: 20px;
+  font-weight: 600;
+  margin-bottom: 8px;
+  color: var(--text);
+}
+
+/* Legend */
+#legend {
+  display: flex;
+  gap: 16px;
+  margin-bottom: 16px;
+  font-size: 12px;
+  color: var(--text-muted);
+}
+#legend .swatch {
+  display: inline-block;
+  width: 12px;
+  height: 12px;
+  border-radius: var(--cell-radius);
+  margin-right: 4px;
+  vertical-align: middle;
+}
+
+/* Month labels */
+#month-labels {
+  display: flex;
+  font-size: 11px;
+  color: var(--text-muted);
+  margin-bottom: 2px;
+  padding-left: 32px; /* align with grid past day labels */
+}
+#month-labels span {
+  text-align: left;
+}
+
+/* Grid wrapper: day labels + grid */
+#calendar-wrapper {
+  display: flex;
+  gap: 4px;
+}
+
+#day-labels {
+  display: flex;
+  flex-direction: column;
+  gap: var(--cell-gap);
+  font-size: 11px;
+  color: var(--text-muted);
+  padding-top: 0;
+}
+#day-labels span {
+  height: var(--cell-size);
+  line-height: var(--cell-size);
+  text-align: right;
+  width: 28px;
+}
+
+/* The actual grid of cells */
+#calendar-grid {
+  display: grid;
+  grid-template-rows: repeat(7, var(--cell-size));
+  grid-auto-columns: var(--cell-size);
+  grid-auto-flow: column;
+  gap: var(--cell-gap);
+}
+
+.cell {
+  width: var(--cell-size);
+  height: var(--cell-size);
+  border-radius: var(--cell-radius);
+  background: var(--cell-empty);
+  cursor: pointer;
+  transition: outline 0.1s;
+  outline: 2px solid transparent;
+  outline-offset: -1px;
+  position: relative;
+  overflow: visible;
+}
+.cell:hover {
+  outline-color: rgba(255,255,255,0.4);
+}
+.cell.future {
+  visibility: hidden;
+}
+.cell-layer {
+  position: absolute;
+  inset: 0;
+  border-radius: var(--cell-radius);
+  mix-blend-mode: screen;
+}
+
+/* Tooltip */
+#tooltip {
+  position: fixed;
+  pointer-events: none;
+  background: #1c2128;
+  border: 1px solid var(--border);
+  color: var(--text);
+  padding: 6px 10px;
+  border-radius: 6px;
+  font-size: 12px;
+  z-index: 100;
+  opacity: 0;
+  transition: opacity 0.15s;
+  white-space: nowrap;
+}
+#tooltip.visible { opacity: 1; }
+
+/* ── Feed peek indicator ───────────────────────────────────────── */
+#feed-peek {
+  text-align: center;
+  padding: 16px 0 8px;
+  color: var(--text-muted);
+  font-size: 13px;
+  letter-spacing: 0.5px;
+  cursor: pointer;
+}
+#feed-peek:hover { color: var(--text); }
+#feed-peek .arrow {
+  display: block;
+  font-size: 18px;
+  animation: bob 2s ease-in-out infinite;
+}
+@keyframes bob {
+  0%, 100% { transform: translateY(0); }
+  50% { transform: translateY(4px); }
+}
+
+/* ── Feed Section ──────────────────────────────────────────────── */
+#feed-section {
+  max-width: var(--feed-width);
+  margin: 0 auto;
+  padding: 0 16px 80px;
+}
+
+.feed-card {
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  background: var(--surface);
+  margin-bottom: 12px;
+  overflow: hidden;
+}
+
+.feed-header {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 12px 16px;
+  border-bottom: 1px solid var(--border);
+}
+
+.feed-dot {
+  width: 14px;
+  height: 14px;
+  border-radius: 3px;
+  flex-shrink: 0;
+}
+
+.feed-date {
+  font-weight: 600;
+  font-size: 14px;
+}
+
+.feed-weekday {
+  color: var(--text-muted);
+  font-size: 13px;
+  margin-left: auto;
+}
+
+.feed-tasks {
+  padding: 8px 16px;
+  display: flex;
+  gap: 8px;
+  border-bottom: 1px solid var(--border);
+}
+
+.task-pill {
+  font-size: 12px;
+  padding: 2px 10px;
+  border-radius: 12px;
+  font-weight: 500;
+}
+.task-pill.painting { background: rgba(171,35,18,0.2); color: rgb(220,70,50); }
+.task-pill.coding   { background: rgba(45,56,155,0.2); color: rgb(80,96,210); }
+.task-pill.writing  { background: rgba(40,140,35,0.2);  color: rgb(70,185,65); }
+.task-pill.off      { background: rgba(255,255,255,0.05); color: var(--text-muted); text-decoration: line-through; }
+
+.feed-body {
+  padding: 12px 16px 16px;
+  color: var(--text);
+  font-size: 14px;
+  line-height: 1.6;
+}
+.feed-body:empty { display: none; }
+
+/* ── Empty state ───────────────────────────────────────────────── */
+.feed-card.empty {
+  border-style: dashed;
+  opacity: 0.5;
+}
+</style>
+</head>
+<body>
+
+<div id="tooltip"></div>
+
+<section id="calendar-section">
+  <h1>publish daily</h1>
+  <div id="legend">
+    <span><span class="swatch" style="background:rgb(171,35,18)"></span>painting</span>
+    <span><span class="swatch" style="background:rgb(45,56,155)"></span>coding</span>
+    <span><span class="swatch" style="background:rgb(40,140,35)"></span>writing</span>
+  </div>
+  <div id="month-labels"></div>
+  <div id="calendar-wrapper">
+    <div id="day-labels"></div>
+    <div id="calendar-grid"></div>
+  </div>
+  <div id="feed-peek" onclick="document.getElementById('feed-section').scrollIntoView({behavior:'smooth'})">
+    <span class="arrow">&#x25BE;</span>
+    feed
+  </div>
+</section>
+
+<section id="feed-section"></section>
+
+<script>
+// ── Mock Data ────────────────────────────────────────────────────
+// Tasks: painting (R), coding (B), writing (G)
+// Additive color mixing on dark bg
+const MOCK_DATA = generateMockData();
+
+function generateMockData() {
+  const data = {};
+  const today = new Date();
+  const phrases = {
+    painting: [
+      "Watercolor studies of morning light on the desk.",
+      "Sketched character concepts for the comic project.",
+      "Ink wash experiments — happy with the texture.",
+      "Digital painting practice, focused on skin tones.",
+      "Quick plein air sketch at the park.",
+      "Worked on the oil painting of the harbor.",
+    ],
+    coding: [
+      "Refactored the auth module, much cleaner now.",
+      "Fixed that gnarly race condition in the queue.",
+      "Built the calendar grid component from scratch.",
+      "Paired on the API redesign, good progress.",
+      "Wrote a CLI tool to automate deploys.",
+      "Prototyped the new feed layout in vanilla JS.",
+    ],
+    writing: [
+      "Drafted 1200 words on the essay about tools.",
+      "Edited chapter 3, tightened the dialogue.",
+      "Morning pages, stream of consciousness.",
+      "Blog post about additive color mixing.",
+      "Journaled about creative momentum.",
+      "Outlined the next three newsletter issues.",
+    ],
+  };
+
+  // Drifting probabilities create natural-looking clusters/phases
+  let pPaint = 0.6 + Math.random() * 0.25;
+  let pCode  = 0.6 + Math.random() * 0.25;
+  let pWrite = 0.6 + Math.random() * 0.25;
+
+  function drift(p) {
+    // Random walk clamped to [0.05, 0.75]
+    p += (Math.random() - 0.5) * 0.08;
+    return Math.max(0.3, Math.min(0.9, p));
+  }
+
+  for (let i = 364; i >= 0; i--) {
+    const d = new Date(today);
+    d.setDate(d.getDate() - i);
+    const key = dateKey(d);
+
+    // Drift each day (walk forward chronologically so clusters are contiguous)
+    pPaint = drift(pPaint);
+    pCode  = drift(pCode);
+    pWrite = drift(pWrite);
+
+    // Occasionally a bigger shift — new phase/obsession
+    if (Math.random() < 0.03) pPaint = 0.3 + Math.random() * 0.55;
+    if (Math.random() < 0.03) pCode  = 0.3 + Math.random() * 0.55;
+    if (Math.random() < 0.03) pWrite = 0.3 + Math.random() * 0.55;
+
+    const painting = Math.random() < pPaint;
+    const coding   = Math.random() < pCode;
+    const writing  = Math.random() < pWrite;
+
+    if (!painting && !coding && !writing) continue;
+
+    const parts = [];
+    if (painting) parts.push(phrases.painting[Math.floor(Math.random() * phrases.painting.length)]);
+    if (coding)   parts.push(phrases.coding[Math.floor(Math.random() * phrases.coding.length)]);
+    if (writing)  parts.push(phrases.writing[Math.floor(Math.random() * phrases.writing.length)]);
+
+    data[key] = {
+      painting,
+      coding,
+      writing,
+      content: parts.join("\n\n"),
+    };
+  }
+  return data;
+}
+
+function dateKey(d) {
+  return d.getFullYear() + '-' +
+    String(d.getMonth() + 1).padStart(2, '0') + '-' +
+    String(d.getDate()).padStart(2, '0');
+}
+
+// ── Color Channels ───────────────────────────────────────────────
+const TASK_COLORS = {
+  painting: 'rgb(171, 35, 18)',
+  coding:   'rgb(45, 56, 155)',
+  writing:  'rgb(40, 140, 35)',
+};
+
+// Composite color for feed dots / non-layered uses
+function taskColor(entry) {
+  if (!entry) return null;
+  let r = 0, g = 0, b = 0;
+  if (entry.painting) { r += 171; g += 35;  b += 18;  }
+  if (entry.writing)  { r += 40;  g += 140; b += 35;  }
+  if (entry.coding)   { r += 45;  g += 56;  b += 155; }
+  return `rgb(${Math.min(r,255)}, ${Math.min(g,255)}, ${Math.min(b,255)})`;
+}
+
+// Build overlapping layer divs inside a cell
+function addCellLayers(cell, entry) {
+  if (!entry) return;
+  const tasks = ['painting', 'coding', 'writing'].filter(t => entry[t]);
+  if (tasks.length === 0) return;
+
+  // Single task — no offset needed, just color the cell directly
+  if (tasks.length === 1) {
+    cell.style.background = TASK_COLORS[tasks[0]];
+    return;
+  }
+
+  // Multiple tasks — overlapping layers with tiny random offsets
+  cell.style.background = '#000'; // black base for screen blending
+  tasks.forEach(t => {
+    const layer = document.createElement('div');
+    layer.className = 'cell-layer';
+    layer.style.background = TASK_COLORS[t];
+    const dx = (Math.random() - 0.5) * 2.5;
+    const dy = (Math.random() - 0.5) * 2.5;
+    layer.style.transform = `translate(${dx}px, ${dy}px)`;
+    cell.appendChild(layer);
+  });
+}
+
+// ── Build Calendar ───────────────────────────────────────────────
+const today = new Date();
+today.setHours(0, 0, 0, 0);
+
+// We want 52 full weeks + the current partial week
+// Start from the Sunday ~52 weeks ago
+const totalWeeks = 53;
+const endDay = new Date(today);
+const startDay = new Date(today);
+// Go back to the start of this week (Sunday)
+startDay.setDate(startDay.getDate() - startDay.getDay());
+// Then back 52 more weeks
+startDay.setDate(startDay.getDate() - 52 * 7);
+
+const grid = document.getElementById('calendar-grid');
+const monthLabels = document.getElementById('month-labels');
+const dayLabels = document.getElementById('day-labels');
+const tooltip = document.getElementById('tooltip');
+
+// Day labels (Mon, Wed, Fri shown, rest blank for breathing room like GitHub)
+const dayNames = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'];
+for (let i = 0; i < 7; i++) {
+  const span = document.createElement('span');
+  span.textContent = (i % 2 === 1) ? dayNames[i] : '';
+  dayLabels.appendChild(span);
+}
+
+// Build cells week by week
+const monthSpans = [];
+let lastMonth = -1;
+let currentWeekCells = 0;
+
+const cursor = new Date(startDay);
+while (cursor <= today) {
+  const key = dateKey(cursor);
+  const entry = MOCK_DATA[key];
+  const isFuture = cursor > today;
+
+  const cell = document.createElement('div');
+  cell.className = 'cell' + (isFuture ? ' future' : '');
+  cell.dataset.date = key;
+
+  addCellLayers(cell, entry);
+
+  // Track months for labels
+  const m = cursor.getMonth();
+  if (cursor.getDay() === 0) { // start of a new column
+    if (m !== lastMonth) {
+      monthSpans.push({ month: m, week: monthSpans.length ? null : 0 });
+      lastMonth = m;
+    }
+  }
+
+  // Tooltip
+  cell.addEventListener('mouseenter', (e) => {
+    const d = cell.dataset.date;
+    const ent = MOCK_DATA[d];
+    let text = formatDateNice(d);
+    if (ent) {
+      const tasks = [];
+      if (ent.painting) tasks.push('painting');
+      if (ent.coding) tasks.push('coding');
+      if (ent.writing) tasks.push('writing');
+      text += ' — ' + tasks.join(', ');
+    } else {
+      text += ' — no tasks';
+    }
+    tooltip.textContent = text;
+    tooltip.classList.add('visible');
+  });
+  cell.addEventListener('mousemove', (e) => {
+    tooltip.style.left = (e.clientX + 12) + 'px';
+    tooltip.style.top = (e.clientY - 32) + 'px';
+  });
+  cell.addEventListener('mouseleave', () => {
+    tooltip.classList.remove('visible');
+  });
+
+  // Click → scroll to feed
+  cell.addEventListener('click', () => {
+    const target = document.getElementById('day-' + cell.dataset.date);
+    if (target) {
+      target.scrollIntoView({ behavior: 'smooth', block: 'center' });
+      target.style.outline = '2px solid rgba(255,255,255,0.5)';
+      setTimeout(() => { target.style.outline = 'none'; }, 1500);
+    }
+  });
+
+  grid.appendChild(cell);
+  cursor.setDate(cursor.getDate() + 1);
+}
+
+// Month labels — approximate by measuring column positions
+(function buildMonthLabels() {
+  const months = ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
+  // Get actual rendered cell size
+  const firstCell = grid.querySelector('.cell');
+  const colWidth = firstCell ? (firstCell.offsetWidth + 5) : 18; // cell + gap
+  // Walk weeks and find first occurrence of each month
+  const seen = {};
+  const labels = [];
+  const c = new Date(startDay);
+  let weekIdx = 0;
+  while (c <= today) {
+    if (c.getDay() === 0) {
+      const m = c.getMonth();
+      // If the first day of this week column is in a new month
+      if (seen[m] === undefined) {
+        seen[m] = weekIdx;
+        labels.push({ month: m, col: weekIdx });
+      }
+      weekIdx++;
+    }
+    c.setDate(c.getDate() + 1);
+  }
+
+  // Render
+  let lastCol = 0;
+  labels.forEach((l, i) => {
+    const span = document.createElement('span');
+    span.textContent = months[l.month];
+    const offset = (l.col - lastCol) * colWidth;
+    span.style.width = (i < labels.length - 1 ? ((labels[i+1].col - l.col) * colWidth) : 40) + 'px';
+    monthLabels.appendChild(span);
+    lastCol = l.col;
+  });
+})();
+
+// ── Build Feed ───────────────────────────────────────────────────
+const feedSection = document.getElementById('feed-section');
+const weekdays = ['Sunday','Monday','Tuesday','Wednesday','Thursday','Friday','Saturday'];
+
+for (let i = 0; i < 365; i++) {
+  const d = new Date(today);
+  d.setDate(d.getDate() - i);
+  const key = dateKey(d);
+  const entry = MOCK_DATA[key];
+
+  const card = document.createElement('div');
+  card.className = 'feed-card' + (!entry ? ' empty' : '');
+  card.id = 'day-' + key;
+
+  const color = taskColor(entry) || 'var(--cell-empty)';
+
+  // Header
+  const header = document.createElement('div');
+  header.className = 'feed-header';
+  header.innerHTML = `
+    <div class="feed-dot" style="background:${color}"></div>
+    <span class="feed-date">${key}</span>
+    <span class="feed-weekday">${weekdays[d.getDay()]}</span>
+  `;
+  card.appendChild(header);
+
+  // Task pills
+  const tasks = document.createElement('div');
+  tasks.className = 'feed-tasks';
+  tasks.innerHTML = `
+    <span class="task-pill ${entry?.painting ? 'painting' : 'off'}">painting</span>
+    <span class="task-pill ${entry?.coding ? 'coding' : 'off'}">coding</span>
+    <span class="task-pill ${entry?.writing ? 'writing' : 'off'}">writing</span>
+  `;
+  card.appendChild(tasks);
+
+  // Body
+  if (entry?.content) {
+    const body = document.createElement('div');
+    body.className = 'feed-body';
+    body.innerHTML = entry.content.split('\n\n').map(p => `<p>${p}</p>`).join('');
+    card.appendChild(body);
+  }
+
+  feedSection.appendChild(card);
+}
+
+// ── Helpers ──────────────────────────────────────────────────────
+function formatDateNice(key) {
+  const [y, m, d] = key.split('-');
+  const dt = new Date(+y, +m - 1, +d);
+  return weekdays[dt.getDay()] + ', ' + ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'][dt.getMonth()] + ' ' + +d;
+}
+</script>
+
+</body>
+</html>
