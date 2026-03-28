@@ -5,7 +5,7 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<link href="https://fonts.googleapis.com/css2?family=Averia+Serif+Libre:wght@400;700&family=JetBrains+Mono:wght@400;700&display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=Averia+Serif+Libre:wght@300;400;700&family=JetBrains+Mono:wght@400;700&family=Libre+Baskerville:ital,wght@0,400;0,700;1,400&display=swap" rel="stylesheet">
 <title>Publish Daily</title>
 <style>
 /* ── Reset & Base ──────────────────────────────────────────────── */
@@ -21,7 +21,7 @@
   --cell-gap: 5px;
   --cell-size: clamp(13px, 1.3vw, 22px);
   --cell-radius: 3px;
-  --feed-width: 590px;
+  --feed-width: 530px;
 }
 
 html { background: var(--bg); color: var(--text); }
@@ -252,72 +252,154 @@ body {
   padding: 0 16px 80px;
   position: relative;
   z-index: 1;
+  overflow: visible;
 }
 
-.feed-card {
-  border: 1px solid var(--border);
-  border-radius: 12px;
-  background: var(--surface);
-  margin-bottom: 12px;
-  overflow: hidden;
-}
-
-.feed-header {
+/* Day separator */
+.day-separator {
   display: flex;
   align-items: center;
   gap: 10px;
-  padding: 12px 16px;
-  border-bottom: 1px solid var(--border);
-}
-
-.feed-dot {
-  width: 14px;
-  height: 14px;
-  border-radius: 3px;
-  flex-shrink: 0;
-}
-
-.feed-date {
-  font-weight: 600;
-  font-size: 14px;
-}
-
-.feed-weekday {
+  padding: 20px 0 8px;
   color: var(--text-muted);
   font-size: 13px;
-  margin-left: auto;
 }
+.day-separator:first-child { padding-top: 0; }
 
-.feed-tasks {
-  padding: 8px 16px;
+/* Hide side-info by default (inline mode) */
+.day-separator .sep-info { display: none; }
+
+/* Left-side mode: applied via JS when there's room */
+.day-separator.side-mode {
+  position: relative;
+  padding: 16px 0 4px;
+}
+.day-separator.side-mode .sep-info {
+  position: absolute;
+  right: calc(100% + 12px);
+  top: 16px;
   display: flex;
-  gap: 8px;
-  border-bottom: 1px solid var(--border);
-}
-
-.task-pill {
+  align-items: center;
+  gap: 6px;
+  white-space: nowrap;
   font-size: 12px;
-  padding: 2px 10px;
-  border-radius: 12px;
-  font-weight: 500;
 }
-.task-pill.painting { background: rgba(171,35,18,0.2); color: rgb(220,70,50); }
-.task-pill.coding   { background: rgba(45,56,155,0.2); color: rgb(80,96,210); }
-.task-pill.writing  { background: rgba(40,140,35,0.2);  color: rgb(70,185,65); }
-.task-pill.off      { background: rgba(255,255,255,0.05); color: var(--text-muted); text-decoration: line-through; }
+.day-separator.side-mode > .sep-dot-wrap,
+.day-separator.side-mode > span,
+.day-separator.side-mode > .sep-line {
+  display: none;
+}
+.day-separator .sep-dot-wrap {
+  width: 16px;
+  height: 16px;
+  position: relative;
+  flex-shrink: 0;
+}
+.day-separator .sep-layer {
+  position: absolute;
+  inset: 0;
+  border-radius: 3px;
+  mix-blend-mode: screen;
+}
+.day-separator .sep-line {
+  flex: 1;
+  height: 1px;
+  background: var(--border);
+}
 
-.feed-body {
-  padding: 12px 16px 16px;
+/* Painting chip — polaroid style */
+.chip-painting {
+  width: 100%;
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: 0;
+  margin-bottom: 10px;
+  padding: 8px;
+}
+.chip-painting img {
+  width: 100%;
+  aspect-ratio: 16 / 10;
+  object-fit: cover;
+  display: block;
+}
+
+/* Coding chip — compact, just a link */
+.chip-coding {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 10px 14px;
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  margin-bottom: 10px;
+  font-size: 13px;
+}
+.chip-coding .code-icon {
+  color: rgb(80,96,210);
+  font-size: 16px;
+  flex-shrink: 0;
+}
+.chip-coding a {
+  color: rgb(80,96,210);
+  text-decoration: none;
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 12px;
+}
+.chip-coding a:hover { text-decoration: underline; }
+
+/* Writing chip — header + prose with fade */
+.chip-writing {
+  background: none;
+  border: none;
+  border-radius: 0;
+  margin-bottom: 10px;
+  overflow: hidden;
+  padding: 0;
+  position: relative;
+}
+.chip-writing h3 {
+  font-family: 'Averia Serif Libre', serif;
+  font-size: 20px;
+  font-weight: 400;
   color: var(--text);
-  font-size: 14px;
-  line-height: 1.6;
+  margin-bottom: 6px;
+  line-height: 1.25;
+  letter-spacing: -0.01em;
 }
-.feed-body:empty { display: none; }
-
-/* ── Empty state ───────────────────────────────────────────────── */
-.feed-card.empty {
-  border-style: dashed;
-  opacity: 0.5;
+.chip-writing .prose {
+  font-family: 'Libre Baskerville', Georgia, serif;
+  color: rgba(230, 237, 243, 0.7);
+  font-size: 11px;
+  line-height: 1.85;
+  letter-spacing: 0.01em;
+  max-height: calc(1.85em * 5);
+  overflow: hidden;
+  text-indent: 1.5em;
+}
+.chip-writing .prose-fade {
+  position: absolute;
+  bottom: 0;
+  left: 0;
+  right: 0;
+  height: 60px;
+  background: linear-gradient(to bottom, transparent, var(--bg));
+  display: flex;
+  align-items: flex-end;
+  justify-content: center;
+  bottom: -4px;
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 11px;
+  font-weight: 700;
+  color: var(--text-muted);
+  letter-spacing: 0.05em;
+  cursor: pointer;
+  -webkit-text-stroke: 3px var(--bg);
+  paint-order: stroke fill;
+  text-shadow: 0 0 3px var(--bg), 0 0 6px var(--bg), 0 0 10px var(--bg), 0 2px 8px var(--bg);
+}
+.chip-writing .prose-fade:hover {
+  color: var(--text);
 }
 </style>
 </head>
@@ -351,32 +433,22 @@ const MOCK_DATA = generateMockData();
 function generateMockData() {
   const data = {};
   const today = new Date();
-  const phrases = {
-    painting: [
-      "Watercolor studies of morning light on the desk.",
-      "Sketched character concepts for the comic project.",
-      "Ink wash experiments — happy with the texture.",
-      "Digital painting practice, focused on skin tones.",
-      "Quick plein air sketch at the park.",
-      "Worked on the oil painting of the harbor.",
-    ],
-    coding: [
-      "Refactored the auth module, much cleaner now.",
-      "Fixed that gnarly race condition in the queue.",
-      "Built the calendar grid component from scratch.",
-      "Paired on the API redesign, good progress.",
-      "Wrote a CLI tool to automate deploys.",
-      "Prototyped the new feed layout in vanilla JS.",
-    ],
-    writing: [
-      "Drafted 1200 words on the essay about tools.",
-      "Edited chapter 3, tightened the dialogue.",
-      "Morning pages, stream of consciousness.",
-      "Blog post about additive color mixing.",
-      "Journaled about creative momentum.",
-      "Outlined the next three newsletter issues.",
-    ],
-  };
+  const codingRepos = [
+    "github.com/user/publish-daily",
+    "github.com/user/raytracer-rs",
+    "github.com/user/dotfiles",
+    "github.com/user/cli-tools",
+    "github.com/user/sketch-engine",
+    "github.com/user/site-rebuild",
+  ];
+  const writingPosts = [
+    { title: "On the texture of daily practice", body: "There's something about showing up every day that changes the nature of the work itself. It stops being about any single output and becomes about the accumulated weight of attention. I've noticed that the days I least want to sit down are often the days that produce the most interesting results. Not because suffering is productive, but because resistance is a signal that you're pushing against the edge of what you know. The comfortable work is the work you've already mastered. The uncomfortable work is where growth lives. I don't think this means you should always be uncomfortable. But I think it means you should notice when you are, and lean into it a little before retreating to safety." },
+    { title: "Tools shape the hand that holds them", body: "I switched from Procreate to oil paint last month and the difference isn't just tactile. The way I think about composition has changed. Digital tools let you undo, so you plan less. Oil forces commitment. Every stroke is a decision you have to live with or paint over, and painting over leaves a trace. There's a metaphor in there about how the tools we choose for thinking shape the thoughts we're capable of having. A word processor thinks in paragraphs. A typewriter thinks in pages. A pen thinks in sentences. I wonder what we lose when we optimize for ease of revision." },
+    { title: "The color of Tuesday", body: "I've been tracking my creative output for six months now and I'm starting to see patterns I didn't expect. Tuesdays are almost always my most productive painting days. Thursdays are for writing. I can't explain it. There's no structural reason for this. My schedule is the same every day. But the data doesn't lie. Maybe there's some weekly rhythm in energy or attention that I'm not consciously aware of. Or maybe I just happened to have a few good Tuesdays early on and the pattern became self-reinforcing." },
+    { title: "Against optimization", body: "Everyone wants to optimize their creative process. Wake up at 5am. Use the Pomodoro technique. Batch your tasks. Eliminate distractions. I've tried all of it and the thing that actually works is much simpler and much harder: care about what you're making. When I care, the hours disappear. When I don't, no amount of productivity theater will save the work. The hard part isn't finding the right system. The hard part is finding the right project. Everything else follows from genuine interest." },
+    { title: "What the calendar shows", body: "Looking at a year of creative work compressed into colored squares is a strange experience. Some weeks are dense with activity, every cell lit up. Others are sparse. The temptation is to judge the sparse weeks as failures, but when I click into them I often find that those were the weeks I was thinking. Germinating. The work that followed was better for the pause. Not every gap is procrastination. Some gaps are preparation. The calendar can't tell you which is which. Only you know." },
+    { title: "Additive color as creative metaphor", body: "The way this site blends red, green, and blue for painting, coding, and writing feels accidentally profound. When you do all three, the result isn't muddy. It's bright. Almost white. In subtractive color mixing, combining everything makes brown. In additive mixing, combining everything makes light. I like the idea that creative pursuits combine additively. Writing doesn't take away from painting. Coding doesn't diminish writing. They illuminate each other. The days I do all three feel like that. Not exhausting. Luminous." },
+  ];
 
   // Drifting probabilities create natural-looking clusters/phases
   let pPaint = 0.6 + Math.random() * 0.25;
@@ -411,17 +483,11 @@ function generateMockData() {
 
     if (!painting && !coding && !writing) continue;
 
-    const parts = [];
-    if (painting) parts.push(phrases.painting[Math.floor(Math.random() * phrases.painting.length)]);
-    if (coding)   parts.push(phrases.coding[Math.floor(Math.random() * phrases.coding.length)]);
-    if (writing)  parts.push(phrases.writing[Math.floor(Math.random() * phrases.writing.length)]);
+    const entry = { painting, coding, writing };
+    if (coding)  entry.repo = codingRepos[Math.floor(Math.random() * codingRepos.length)];
+    if (writing) entry.post = writingPosts[Math.floor(Math.random() * writingPosts.length)];
 
-    data[key] = {
-      painting,
-      coding,
-      writing,
-      content: parts.join("\n\n"),
-    };
+    data[key] = entry;
   }
   return data;
 }
@@ -667,13 +733,6 @@ buildCalendar();
 
 // Rebuild on resize (debounced)
 let resizeTimer;
-window.addEventListener('resize', () => {
-  clearTimeout(resizeTimer);
-  resizeTimer = setTimeout(() => {
-    calendarFlow.dataset.measured = '1';
-    buildCalendar();
-  }, 200);
-});
 
 // ── Build Feed ───────────────────────────────────────────────────
 const feedSection = document.getElementById('feed-section');
@@ -684,43 +743,102 @@ for (let i = 0; i < 365; i++) {
   d.setDate(d.getDate() - i);
   const key = dateKey(d);
   const entry = MOCK_DATA[key];
+  if (!entry) continue;
 
-  const card = document.createElement('div');
-  card.className = 'feed-card' + (!entry ? ' empty' : '');
-  card.id = 'day-' + key;
+  // Day separator
+  const sep = document.createElement('div');
+  sep.className = 'day-separator';
+  sep.id = 'day-' + key;
 
-  const color = taskColor(entry) || 'var(--cell-empty)';
-
-  // Header
-  const header = document.createElement('div');
-  header.className = 'feed-header';
-  header.innerHTML = `
-    <div class="feed-dot" style="background:${color}"></div>
-    <span class="feed-date">${key}</span>
-    <span class="feed-weekday">${weekdays[d.getDay()]}</span>
-  `;
-  card.appendChild(header);
-
-  // Task pills
-  const tasks = document.createElement('div');
-  tasks.className = 'feed-tasks';
-  tasks.innerHTML = `
-    <span class="task-pill ${entry?.painting ? 'painting' : 'off'}">painting</span>
-    <span class="task-pill ${entry?.coding ? 'coding' : 'off'}">coding</span>
-    <span class="task-pill ${entry?.writing ? 'writing' : 'off'}">writing</span>
-  `;
-  card.appendChild(tasks);
-
-  // Body
-  if (entry?.content) {
-    const body = document.createElement('div');
-    body.className = 'feed-body';
-    body.innerHTML = entry.content.split('\n\n').map(p => `<p>${p}</p>`).join('');
-    card.appendChild(body);
+  // Build layered dot
+  const dotWrap = document.createElement('div');
+  dotWrap.className = 'sep-dot-wrap';
+  const activeTasks = ['painting', 'coding', 'writing'].filter(t => entry[t]);
+  if (activeTasks.length === 1) {
+    dotWrap.style.borderRadius = '3px';
+    const lvl = entry[activeTasks[0]];
+    const [, cr, cg, cb] = TASK_COLORS[activeTasks[0]].match(/(\d+),\s*(\d+),\s*(\d+)/);
+    const t = lvl / 2;
+    dotWrap.style.background = `rgb(${Math.round(37+(cr-37)*t)},${Math.round(44+(cg-44)*t)},${Math.round(53+(cb-53)*t)})`;
+  } else {
+    dotWrap.style.background = '#000';
+    dotWrap.style.borderRadius = '3px';
+    activeTasks.forEach(task => {
+      const layer = document.createElement('div');
+      layer.className = 'sep-layer';
+      layer.style.background = TASK_COLORS[task];
+      layer.style.opacity = (entry[task] / 2).toFixed(2);
+      const dx = (Math.random() - 0.5) * 2.5;
+      const dy = (Math.random() - 0.5) * 2.5;
+      layer.style.transform = `translate(${dx}px, ${dy}px)`;
+      dotWrap.appendChild(layer);
+    });
   }
 
-  feedSection.appendChild(card);
+  // Inline layout (narrow): dot, text, line
+  sep.appendChild(dotWrap.cloneNode(true));
+  sep.insertAdjacentHTML('beforeend', `
+    <span>${key} &middot; ${weekdays[d.getDay()]}</span>
+    <div class="sep-line"></div>
+  `);
+
+  // Side layout (wide): dot + text grouped together
+  const sideInfo = document.createElement('div');
+  sideInfo.className = 'sep-info';
+  sideInfo.appendChild(dotWrap);
+  sideInfo.insertAdjacentHTML('beforeend', `<span>${key} &middot; ${weekdays[d.getDay()]}</span>`);
+  sep.appendChild(sideInfo);
+  feedSection.appendChild(sep);
+
+  // Painting chip — square image
+  if (entry.painting) {
+    const chip = document.createElement('div');
+    chip.className = 'chip-painting';
+    chip.innerHTML = `<img src="https://picsum.photos/seed/${key}/590/370" alt="painting" loading="lazy">`;
+    feedSection.appendChild(chip);
+  }
+
+  // Coding chip
+  if (entry.coding) {
+    const chip = document.createElement('div');
+    chip.className = 'chip-coding';
+    chip.innerHTML = `<span class="code-icon">&lt;/&gt;</span><a href="https://${entry.repo}">${entry.repo}</a>`;
+    feedSection.appendChild(chip);
+  }
+
+  // Writing chip
+  if (entry.writing) {
+    const chip = document.createElement('div');
+    chip.className = 'chip-writing';
+    chip.innerHTML = `
+      <h3>${entry.post.title}</h3>
+      <div class="prose">${entry.post.body}</div>
+      <div class="prose-fade">continue reading →</div>
+    `;
+    feedSection.appendChild(chip);
+  }
 }
+
+// ── Toggle side-mode on separators based on available space ──────
+function updateSeparatorMode() {
+  const seps = document.querySelectorAll('.day-separator');
+  if (!seps.length) return;
+  // Measure how much space is to the left of the feed column
+  const feedRect = feedSection.getBoundingClientRect();
+  const leftSpace = feedRect.left;
+  // Need ~200px for date text + dot + gap
+  const needsSide = leftSpace > 200;
+  seps.forEach(s => s.classList.toggle('side-mode', needsSide));
+}
+updateSeparatorMode();
+window.addEventListener('resize', () => {
+  clearTimeout(resizeTimer);
+  resizeTimer = setTimeout(() => {
+    calendarFlow.dataset.measured = '1';
+    buildCalendar();
+    updateSeparatorMode();
+  }, 200);
+});
 
 // ── Tooltip dot helper ───────────────────────────────────────────
 function tipDot(task, entry) {
