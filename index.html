@@ -373,9 +373,10 @@ function generateMockData() {
     if (Math.random() < 0.03) pCode  = 0.3 + Math.random() * 0.55;
     if (Math.random() < 0.03) pWrite = 0.3 + Math.random() * 0.55;
 
-    const painting = Math.random() < pPaint;
-    const coding   = Math.random() < pCode;
-    const writing  = Math.random() < pWrite;
+    // 0-2 levels: 0 = didn't do it, 1 = some, 2 = full
+    const painting = Math.random() < pPaint ? Math.ceil(Math.random() * 2) : 0;
+    const coding   = Math.random() < pCode  ? Math.ceil(Math.random() * 2) : 0;
+    const writing  = Math.random() < pWrite ? Math.ceil(Math.random() * 2) : 0;
 
     if (!painting && !coding && !writing) continue;
 
@@ -411,10 +412,11 @@ const TASK_COLORS = {
 function taskColor(entry) {
   if (!entry) return null;
   let r = 0, g = 0, b = 0;
-  if (entry.painting) { r += 171; g += 35;  b += 18;  }
-  if (entry.writing)  { r += 40;  g += 140; b += 35;  }
-  if (entry.coding)   { r += 45;  g += 56;  b += 155; }
-  return `rgb(${Math.min(r,255)}, ${Math.min(g,255)}, ${Math.min(b,255)})`;
+  const s = (level) => level / 2; // scale 0-1
+  if (entry.painting) { const k = s(entry.painting); r += 171*k; g += 35*k;  b += 18*k;  }
+  if (entry.writing)  { const k = s(entry.writing);  r += 40*k;  g += 140*k; b += 35*k;  }
+  if (entry.coding)   { const k = s(entry.coding);   r += 45*k;  g += 56*k;  b += 155*k; }
+  return `rgb(${Math.min(Math.round(r),255)}, ${Math.min(Math.round(g),255)}, ${Math.min(Math.round(b),255)})`;
 }
 
 // Build overlapping layer divs inside a cell
@@ -423,18 +425,28 @@ function addCellLayers(cell, entry) {
   const tasks = ['painting', 'coding', 'writing'].filter(t => entry[t]);
   if (tasks.length === 0) return;
 
-  // Single task — no offset needed, just color the cell directly
   if (tasks.length === 1) {
-    cell.style.background = TASK_COLORS[tasks[0]];
+    // Single task: blend between cell-empty and the task color based on level
+    const level = entry[tasks[0]];
+    const t = level / 2;
+    // Parse the task color
+    const [, cr, cg, cb] = TASK_COLORS[tasks[0]].match(/(\d+),\s*(\d+),\s*(\d+)/);
+    // Empty cell base: #252c35 = 37, 44, 53
+    const r = Math.round(37 + (+cr - 37) * t);
+    const g = Math.round(44 + (+cg - 44) * t);
+    const b = Math.round(53 + (+cb - 53) * t);
+    cell.style.background = `rgb(${r}, ${g}, ${b})`;
     return;
   }
 
-  // Multiple tasks — overlapping layers with tiny random offsets
-  cell.style.background = '#000'; // black base for screen blending
+  // Multiple tasks: black base + screen blended layers
+  cell.style.background = '#000';
   tasks.forEach(t => {
+    const level = entry[t]; // 1, 2, or 3
     const layer = document.createElement('div');
     layer.className = 'cell-layer';
     layer.style.background = TASK_COLORS[t];
+    layer.style.opacity = (level / 2).toFixed(2);
     const dx = (Math.random() - 0.5) * 2.5;
     const dy = (Math.random() - 0.5) * 2.5;
     layer.style.transform = `translate(${dx}px, ${dy}px)`;
