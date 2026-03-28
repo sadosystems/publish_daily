@@ -3,7 +3,10 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>publish daily</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Averia+Serif+Libre:wght@400;700&family=JetBrains+Mono:wght@400;700&display=swap" rel="stylesheet">
+<title>Publish Daily</title>
 <style>
 /* ── Reset & Base ──────────────────────────────────────────────── */
 *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
@@ -22,6 +25,20 @@
 }
 
 html { background: var(--bg); color: var(--text); }
+
+#bg-year {
+  position: fixed;
+  top: 20px;
+  left: 24px;
+  font-family: 'Averia Serif Libre', serif;
+  font-size: 14vw;
+  font-weight: 700;
+  color: rgba(255,255,255,0.03);
+  z-index: 0;
+  pointer-events: none;
+  line-height: 1;
+  user-select: none;
+}
 body {
   font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Helvetica, Arial, sans-serif;
   font-size: 14px;
@@ -36,11 +53,14 @@ body {
   align-items: center;
   justify-content: center;
   padding: 40px 20px 20px;
+  position: relative;
+  z-index: 1;
 }
 
 #calendar-section h1 {
-  font-size: 20px;
-  font-weight: 600;
+  font-family: 'Averia Serif Libre', serif;
+  font-size: 28px;
+  font-weight: 700;
   margin-bottom: 8px;
   color: var(--text);
 }
@@ -62,41 +82,68 @@ body {
   vertical-align: middle;
 }
 
-/* Month labels */
-#month-labels {
+/* Calendar row layout */
+#calendar-flow {
   display: flex;
-  font-size: 11px;
-  color: var(--text-muted);
-  margin-bottom: 2px;
-  padding-left: 32px; /* align with grid past day labels */
-}
-#month-labels span {
-  text-align: left;
+  flex-direction: column;
+  gap: 20px;
+  align-items: center;
+  padding: 0 8px;
 }
 
-/* Grid wrapper: day labels + grid */
-#calendar-wrapper {
+.calendar-row {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+}
+
+.cal-label {
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 13px;
+  font-weight: 700;
+  color: #fff;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  -webkit-text-stroke: 3px var(--bg);
+  paint-order: stroke fill;
+}
+
+.row-months {
+  display: flex;
+  margin-bottom: -6px; /* overlap into grid */
+  height: 16px;
+  line-height: 16px;
+  padding-left: 40px; /* align past day labels */
+  position: relative;
+  z-index: 2;
+  pointer-events: none;
+}
+.row-months span {
+  text-align: left;
+  pointer-events: none;
+}
+
+.row-body {
   display: flex;
   gap: 4px;
 }
 
-#day-labels {
+.day-labels {
   display: flex;
   flex-direction: column;
   gap: var(--cell-gap);
-  font-size: 11px;
-  color: var(--text-muted);
-  padding-top: 0;
+  margin-right: 4px;
+  position: relative;
+  z-index: 2;
 }
-#day-labels span {
+.day-labels span {
   height: var(--cell-size);
   line-height: var(--cell-size);
   text-align: right;
-  width: 28px;
+  width: 32px;
 }
 
-/* The actual grid of cells */
-#calendar-grid {
+.row-grid {
   display: grid;
   grid-template-rows: repeat(7, var(--cell-size));
   grid-auto-columns: var(--cell-size);
@@ -119,7 +166,8 @@ body {
 .cell:hover {
   outline-color: rgba(255,255,255,0.4);
 }
-.cell.future {
+.cell.future,
+.cell.outside {
   visibility: hidden;
 }
 .cell-layer {
@@ -171,6 +219,8 @@ body {
   max-width: var(--feed-width);
   margin: 0 auto;
   padding: 0 16px 80px;
+  position: relative;
+  z-index: 1;
 }
 
 .feed-card {
@@ -242,20 +292,17 @@ body {
 </head>
 <body>
 
+<div id="bg-year">2026</div>
 <div id="tooltip"></div>
 
 <section id="calendar-section">
-  <h1>publish daily</h1>
+  <h1>Publish Daily</h1>
   <div id="legend">
     <span><span class="swatch" style="background:rgb(171,35,18)"></span>painting</span>
     <span><span class="swatch" style="background:rgb(45,56,155)"></span>coding</span>
     <span><span class="swatch" style="background:rgb(40,140,35)"></span>writing</span>
   </div>
-  <div id="month-labels"></div>
-  <div id="calendar-wrapper">
-    <div id="day-labels"></div>
-    <div id="calendar-grid"></div>
-  </div>
+  <div id="calendar-flow"></div>
   <div id="feed-peek" onclick="document.getElementById('feed-section').scrollIntoView({behavior:'smooth'})">
     <span class="arrow">&#x25BE;</span>
     feed
@@ -399,129 +446,198 @@ function addCellLayers(cell, entry) {
 const today = new Date();
 today.setHours(0, 0, 0, 0);
 
-// We want 52 full weeks + the current partial week
-// Start from the Sunday ~52 weeks ago
-const totalWeeks = 53;
-const endDay = new Date(today);
-const startDay = new Date(today);
-// Go back to the start of this week (Sunday)
-startDay.setDate(startDay.getDate() - startDay.getDay());
-// Then back 52 more weeks
-startDay.setDate(startDay.getDate() - 52 * 7);
-
-const grid = document.getElementById('calendar-grid');
-const monthLabels = document.getElementById('month-labels');
-const dayLabels = document.getElementById('day-labels');
+const calendarFlow = document.getElementById('calendar-flow');
 const tooltip = document.getElementById('tooltip');
-
-// Day labels (Mon, Wed, Fri shown, rest blank for breathing room like GitHub)
 const dayNames = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'];
-for (let i = 0; i < 7; i++) {
-  const span = document.createElement('span');
-  span.textContent = (i % 2 === 1) ? dayNames[i] : '';
-  dayLabels.appendChild(span);
-}
+const monthNames = ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
 
-// Build cells week by week
-const monthSpans = [];
-let lastMonth = -1;
-let currentWeekCells = 0;
+// Build all weeks — start from the 1st of (current month + 1) last year
+// so each month appears exactly once (e.g. Apr 2025 through Mar 2026)
+const startMonth = new Date(today.getFullYear() - 1, today.getMonth() + 1, 1);
+const startDay = new Date(startMonth);
+startDay.setDate(startDay.getDate() - startDay.getDay()); // back to Sunday
 
-const cursor = new Date(startDay);
-while (cursor <= today) {
-  const key = dateKey(cursor);
-  const entry = MOCK_DATA[key];
-  const isFuture = cursor > today;
-
-  const cell = document.createElement('div');
-  cell.className = 'cell' + (isFuture ? ' future' : '');
-  cell.dataset.date = key;
-
-  addCellLayers(cell, entry);
-
-  // Track months for labels
-  const m = cursor.getMonth();
-  if (cursor.getDay() === 0) { // start of a new column
-    if (m !== lastMonth) {
-      monthSpans.push({ month: m, week: monthSpans.length ? null : 0 });
-      lastMonth = m;
-    }
-  }
-
-  // Tooltip
-  cell.addEventListener('mouseenter', (e) => {
-    const d = cell.dataset.date;
-    const ent = MOCK_DATA[d];
-    let text = formatDateNice(d);
-    if (ent) {
-      const tasks = [];
-      if (ent.painting) tasks.push('painting');
-      if (ent.coding) tasks.push('coding');
-      if (ent.writing) tasks.push('writing');
-      text += ' — ' + tasks.join(', ');
-    } else {
-      text += ' — no tasks';
-    }
-    tooltip.textContent = text;
-    tooltip.classList.add('visible');
-  });
-  cell.addEventListener('mousemove', (e) => {
-    tooltip.style.left = (e.clientX + 12) + 'px';
-    tooltip.style.top = (e.clientY - 32) + 'px';
-  });
-  cell.addEventListener('mouseleave', () => {
-    tooltip.classList.remove('visible');
-  });
-
-  // Click → scroll to feed
-  cell.addEventListener('click', () => {
-    const target = document.getElementById('day-' + cell.dataset.date);
-    if (target) {
-      target.scrollIntoView({ behavior: 'smooth', block: 'center' });
-      target.style.outline = '2px solid rgba(255,255,255,0.5)';
-      setTimeout(() => { target.style.outline = 'none'; }, 1500);
-    }
-  });
-
-  grid.appendChild(cell);
-  cursor.setDate(cursor.getDate() + 1);
-}
-
-// Month labels — approximate by measuring column positions
-(function buildMonthLabels() {
-  const months = ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
-  // Get actual rendered cell size
-  const firstCell = grid.querySelector('.cell');
-  const colWidth = firstCell ? (firstCell.offsetWidth + 5) : 18; // cell + gap
-  // Walk weeks and find first occurrence of each month
-  const seen = {};
-  const labels = [];
+const allWeeks = [];
+{
   const c = new Date(startDay);
-  let weekIdx = 0;
   while (c <= today) {
-    if (c.getDay() === 0) {
-      const m = c.getMonth();
-      // If the first day of this week column is in a new month
-      if (seen[m] === undefined) {
-        seen[m] = weekIdx;
-        labels.push({ month: m, col: weekIdx });
-      }
-      weekIdx++;
-    }
-    c.setDate(c.getDate() + 1);
+    allWeeks.push(new Date(c));
+    c.setDate(c.getDate() + 7);
   }
+}
 
-  // Render
-  let lastCol = 0;
-  labels.forEach((l, i) => {
-    const span = document.createElement('span');
-    span.textContent = months[l.month];
-    const offset = (l.col - lastCol) * colWidth;
-    span.style.width = (i < labels.length - 1 ? ((labels[i+1].col - l.col) * colWidth) : 40) + 'px';
-    monthLabels.appendChild(span);
-    lastCol = l.col;
+// Determine how to split into rows based on viewport
+function calcSplits() {
+  const cellPx = calendarFlow.querySelector('.row-grid .cell')?.offsetWidth || 16;
+  const gapPx = 5;
+  const dayLabelW = 32;
+  const available = calendarFlow.parentElement.clientWidth - 40; // padding
+  const colW = cellPx + gapPx;
+  const maxCols = Math.floor((available - dayLabelW) / colW);
+  if (maxCols >= allWeeks.length) return [allWeeks.length]; // one row
+  // Split into roughly equal rows
+  const numRows = Math.ceil(allWeeks.length / maxCols);
+  const perRow = Math.ceil(allWeeks.length / numRows);
+  const splits = [];
+  for (let i = 0; i < allWeeks.length; i += perRow) {
+    splits.push(Math.min(perRow, allWeeks.length - i));
+  }
+  return splits;
+}
+
+function buildCalendar() {
+  calendarFlow.innerHTML = '';
+
+  // First pass: build with all weeks in one row to measure cell size
+  // Then recalc splits and rebuild if needed
+  const splits = calendarFlow.dataset.measured ? calcSplits() : [allWeeks.length];
+
+  let weekOffset = 0;
+  splits.forEach((rowWeekCount, rowIdx) => {
+    const rowWeeks = allWeeks.slice(weekOffset, weekOffset + rowWeekCount);
+    weekOffset += rowWeekCount;
+
+    const rowContainer = document.createElement('div');
+    rowContainer.className = 'calendar-row';
+
+    // Month labels for this row
+    const monthBar = document.createElement('div');
+    monthBar.className = 'row-months cal-label';
+
+    // Figure out month labels: label at column 0 for the month of the first week,
+    // then label wherever a new month starts
+    const colW = 1; // we'll set widths after measuring
+    let lastMonth = -1;
+    const labelData = [];
+    rowWeeks.forEach((sunday, colIdx) => {
+      // Check what month the majority of this week falls in
+      // Use the Thursday (day+4) as the representative day
+      const thu = new Date(sunday);
+      thu.setDate(thu.getDate() + 3);
+      const m = thu.getMonth();
+      const y = thu.getFullYear();
+      if (m !== lastMonth) {
+        labelData.push({ month: m, year: y, col: colIdx });
+        lastMonth = m;
+      }
+    });
+
+    // Render month labels with proportional widths
+    labelData.forEach((ld, i) => {
+      const span = document.createElement('span');
+      span.textContent = monthNames[ld.month];
+      // Width = number of columns until next label (or end)
+      const nextCol = (i < labelData.length - 1) ? labelData[i + 1].col : rowWeekCount;
+      span.dataset.cols = nextCol - ld.col;
+      monthBar.appendChild(span);
+    });
+
+    rowContainer.appendChild(monthBar);
+
+    // Body: day labels + grid
+    const body = document.createElement('div');
+    body.className = 'row-body';
+
+    const dl = document.createElement('div');
+    dl.className = 'day-labels cal-label';
+    for (let i = 0; i < 7; i++) {
+      const span = document.createElement('span');
+      span.textContent = dayNames[i];
+      dl.appendChild(span);
+    }
+    body.appendChild(dl);
+
+    const grid = document.createElement('div');
+    grid.className = 'row-grid';
+
+    rowWeeks.forEach(sunday => {
+      for (let d = 0; d < 7; d++) {
+        const day = new Date(sunday);
+        day.setDate(day.getDate() + d);
+        const key = dateKey(day);
+        const entry = MOCK_DATA[key];
+        const isFuture = day > today;
+
+        const cell = document.createElement('div');
+        cell.className = 'cell';
+        cell.dataset.date = key;
+
+        if (isFuture) {
+          cell.classList.add('future');
+        } else {
+          addCellLayers(cell, entry);
+
+          cell.addEventListener('mouseenter', () => {
+            const ent = MOCK_DATA[cell.dataset.date];
+            let text = formatDateNice(cell.dataset.date);
+            if (ent) {
+              const tasks = [];
+              if (ent.painting) tasks.push('painting');
+              if (ent.coding) tasks.push('coding');
+              if (ent.writing) tasks.push('writing');
+              text += ' — ' + tasks.join(', ');
+            } else {
+              text += ' — no tasks';
+            }
+            tooltip.textContent = text;
+            tooltip.classList.add('visible');
+          });
+          cell.addEventListener('mousemove', (e) => {
+            tooltip.style.left = (e.clientX + 12) + 'px';
+            tooltip.style.top = (e.clientY - 32) + 'px';
+          });
+          cell.addEventListener('mouseleave', () => {
+            tooltip.classList.remove('visible');
+          });
+          cell.addEventListener('click', () => {
+            const target = document.getElementById('day-' + cell.dataset.date);
+            if (target) {
+              target.scrollIntoView({ behavior: 'smooth', block: 'center' });
+              target.style.outline = '2px solid rgba(255,255,255,0.5)';
+              setTimeout(() => { target.style.outline = 'none'; }, 1500);
+            }
+          });
+        }
+
+        grid.appendChild(cell);
+      }
+    });
+
+    body.appendChild(grid);
+    rowContainer.appendChild(body);
+    calendarFlow.appendChild(rowContainer);
   });
-})();
+
+  // Size month labels now that the grid is rendered
+  const firstCell = calendarFlow.querySelector('.row-grid .cell');
+  if (firstCell) {
+    const cellW = firstCell.offsetWidth + 5; // cell + gap
+    calendarFlow.querySelectorAll('.row-months').forEach(bar => {
+      bar.querySelectorAll('span').forEach(span => {
+        span.style.width = (parseInt(span.dataset.cols) * cellW) + 'px';
+      });
+    });
+
+    // If this was the first build, now recalc with real measurements
+    if (!calendarFlow.dataset.measured) {
+      calendarFlow.dataset.measured = '1';
+      buildCalendar();
+      return;
+    }
+  }
+}
+
+buildCalendar();
+
+// Rebuild on resize (debounced)
+let resizeTimer;
+window.addEventListener('resize', () => {
+  clearTimeout(resizeTimer);
+  resizeTimer = setTimeout(() => {
+    calendarFlow.dataset.measured = '1';
+    buildCalendar();
+  }, 200);
+});
 
 // ── Build Feed ───────────────────────────────────────────────────
 const feedSection = document.getElementById('feed-section');
