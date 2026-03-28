@@ -306,8 +306,6 @@ body {
 }
 .chip-painting img {
   width: 100%;
-  aspect-ratio: 16 / 10;
-  object-fit: cover;
   display: block;
   position: relative;
   z-index: 1;
@@ -905,7 +903,9 @@ for (let i = 0; i < 365; i++) {
   if (entry.painting) {
     const chip = document.createElement('div');
     chip.className = 'chip-painting';
-    chip.innerHTML = `<div class="img-wrap"><img src="logo_card.png" alt="painting" loading="lazy"></div>`;
+    const paintImgs = ['publish_daily_1.png', 'publish_daily_2.png', 'logo_card.png'];
+    const paintSrc = paintImgs[Math.floor(Math.random() * paintImgs.length)];
+    chip.innerHTML = `<div class="img-wrap"><img src="${paintSrc}" alt="painting" loading="lazy"></div>`;
     feedSection.appendChild(chip);
   }
 
