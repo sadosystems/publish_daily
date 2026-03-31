@@ -1,7 +1,8 @@
 import { generateMockData, dateKey } from './mock-data';
 import type { DayEntry } from './mock-data';
-import { getTheme } from './theme-config';
-import { addCellLayers, recolorCell, taskColorForLevel, tipDot, sepDotColor } from './color-engine';
+function cssVar(name: string): string {
+  return getComputedStyle(document.documentElement).getPropertyValue(name).trim();
+}
 
 const MOCK_DATA = generateMockData();
 
@@ -13,6 +14,66 @@ const tooltip = document.getElementById('tooltip')!;
 const dayNames = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'];
 const monthNames = ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
 const weekdays = ['Sunday','Monday','Tuesday','Wednesday','Thursday','Friday','Saturday'];
+
+// ── Color helpers (all read from CSS vars, no runtime math) ─────
+type Task = 'painting' | 'coding' | 'writing';
+const TASKS: Task[] = ['painting', 'coding', 'writing'];
+
+function cellColor(task: Task, level: number): string {
+  const suffix = level >= 2 ? 'l2' : 'l1';
+  return `var(--color-${task}-cell-${suffix})`;
+}
+
+function layerColor(task: Task, level: number): string {
+  return level >= 2 ? `var(--color-${task}-l2)` : `var(--color-${task})`;
+}
+
+function paintCell(cell: HTMLElement, entry: DayEntry | undefined): void {
+  if (!entry) return;
+  const tasks = TASKS.filter(t => entry[t]);
+  if (tasks.length === 0) return;
+
+  if (tasks.length === 1) {
+    cell.style.background = cellColor(tasks[0], entry[tasks[0]]);
+    return;
+  }
+
+  cell.style.background = 'var(--cell-multi-bg)';
+  tasks.forEach(t => {
+    const level = entry[t];
+    const layer = document.createElement('div');
+    layer.className = 'cell-layer';
+    layer.style.background = layerColor(t, level);
+    layer.style.opacity = (level === 1 ? 0.75 : 1).toFixed(2);
+    const dx = (Math.random() - 0.5) * 3;
+    const dy = (Math.random() - 0.5) * 3;
+    layer.style.transform = `translate(${dx}px, ${dy}px)`;
+    cell.appendChild(layer);
+  });
+
+  const vo = parseFloat(cssVar('--cell-veil-opacity')) || 0;
+  if (vo > 0) {
+    const veil = document.createElement('div');
+    veil.className = 'cell-layer';
+    veil.style.background = '#fff';
+    veil.style.mixBlendMode = 'screen';
+    veil.style.opacity = String(vo);
+    veil.style.transform = 'none';
+    cell.appendChild(veil);
+  }
+}
+
+function recolorCell(cell: HTMLElement, entry: DayEntry | undefined): void {
+  cell.querySelectorAll('.cell-layer').forEach(l => l.remove());
+  cell.style.background = '';
+  paintCell(cell, entry);
+}
+
+function tipDot(task: Task, entry: DayEntry | undefined): string {
+  const level = entry ? (entry[task] || 0) : 0;
+  const bg = level === 0 ? 'var(--cell-empty)' : cellColor(task, level);
+  return `<span class="tip-dot" style="background:${bg}">${level}</span>`;
+}
 
 // ── Calendar Weeks ──────────────────────────────────────────────
 const startMonth = new Date(today.getFullYear() - 1, today.getMonth() + 1, 1);
@@ -114,7 +175,7 @@ function buildCalendar(): void {
         if (isFuture) {
           cell.classList.add('future');
         } else {
-          addCellLayers(cell, entry);
+          paintCell(cell, entry);
 
           cell.addEventListener('mouseenter', () => {
             const ent = MOCK_DATA[cell.dataset.date!];
@@ -138,7 +199,7 @@ function buildCalendar(): void {
               const target = document.getElementById('day-' + key);
               if (target) {
                 target.scrollIntoView({ behavior: 'smooth', block: 'center' });
-                highlightDay(target);
+                highlightDayEl(target);
               }
             }
           });
@@ -173,8 +234,8 @@ function buildCalendar(): void {
 // ── Feed ────────────────────────────────────────────────────────
 const feedSection = document.getElementById('feed-section')!;
 
-function highlightDay(el: HTMLElement): void {
-  el.style.outline = '2px solid ' + getTheme().highlightColor;
+function highlightDayEl(el: HTMLElement): void {
+  el.style.outline = '2px solid ' + cssVar('--highlight-color');
   setTimeout(() => { el.style.outline = 'none'; }, 1500);
 }
 
@@ -208,16 +269,16 @@ function renderDay(key: string): HTMLElement | null {
 
   const dotWrap = document.createElement('div');
   dotWrap.className = 'sep-dot-wrap';
-  const activeTasks = (['painting', 'coding', 'writing'] as const).filter(t => entry[t]);
+  const activeTasks = TASKS.filter(t => entry[t]);
   if (activeTasks.length === 1) {
     dotWrap.style.borderRadius = '50%';
-    dotWrap.style.background = sepDotColor(activeTasks[0], entry[activeTasks[0]]);
+    dotWrap.style.background = cellColor(activeTasks[0], entry[activeTasks[0]]);
   } else {
     dotWrap.style.borderRadius = '50%';
     activeTasks.forEach(task => {
       const layer = document.createElement('div');
       layer.className = 'sep-layer';
-      layer.style.background = taskColorForLevel(task, entry[task]);
+      layer.style.background = layerColor(task, entry[task]);
       layer.style.opacity = (entry[task] === 1 ? 0.75 : 1).toFixed(2);
       const dx = (rng() - 0.5) * 5.5;
       const dy = (rng() - 0.5) * 5.5;
@@ -453,7 +514,7 @@ const VirtualFeed = {
       const dist = Math.abs(rect.top - window.innerHeight / 2);
       if (dist < window.innerHeight * 2) {
         existing.scrollIntoView({ behavior: 'smooth', block: 'center' });
-        highlightDay(existing);
+        highlightDayEl(existing);
         history.replaceState(null, '', '#day-' + key);
         return;
       }
@@ -470,7 +531,7 @@ const VirtualFeed = {
       const el = document.getElementById('day-' + key);
       if (el) {
         el.scrollIntoView({ block: 'center' });
-        highlightDay(el);
+        highlightDayEl(el);
       }
       history.replaceState(null, '', '#day-' + key);
     });
@@ -524,42 +585,37 @@ window.addEventListener('resize', () => {
 });
 
 // ── Theme Toggle ────────────────────────────────────────────────
-function recolorAll(): void {
-  // Recolor calendar cells in-place (no layout change)
+// Since colors use var() references, single-task cells and separator dots
+// update automatically when the theme changes. Only multi-task cells need
+// recoloring because they have layer divs with the veil overlay.
+function recolorMultiCells(): void {
   calendarFlow.querySelectorAll('.cell').forEach(cell => {
     const el = cell as HTMLElement;
-    const key = el.dataset.date;
-    if (key) recolorCell(el, MOCK_DATA[key]);
+    if (el.querySelector('.cell-layer')) {
+      recolorCell(el, MOCK_DATA[el.dataset.date!]);
+    }
   });
 
-  // Recolor feed separator dots and chip colors in-place
   const feedWindow = document.getElementById('feed-window');
-  if (feedWindow) {
-    feedWindow.querySelectorAll('.sep-dot-wrap').forEach(dot => {
-      const group = dot.closest('.day-group') as HTMLElement | null;
-      if (!group) return;
-      const key = group.dataset.key;
-      if (!key) return;
-      const entry = MOCK_DATA[key];
-      if (!entry) return;
-      const el = dot as HTMLElement;
-      const activeTasks = (['painting', 'coding', 'writing'] as const).filter(t => entry[t]);
-      // Clear old layers
-      el.querySelectorAll('.sep-layer').forEach(l => l.remove());
-      if (activeTasks.length === 1) {
-        el.style.background = sepDotColor(activeTasks[0], entry[activeTasks[0]]);
-      } else {
-        el.style.background = '';
-        activeTasks.forEach(task => {
-          const layer = document.createElement('div');
-          layer.className = 'sep-layer';
-          layer.style.background = taskColorForLevel(task, entry[task]);
-          layer.style.opacity = (entry[task] === 1 ? 0.75 : 1).toFixed(2);
-          el.appendChild(layer);
-        });
-      }
+  if (!feedWindow) return;
+  feedWindow.querySelectorAll('.sep-dot-wrap').forEach(dot => {
+    const el = dot as HTMLElement;
+    if (!el.querySelector('.sep-layer')) return;
+    const group = el.closest('.day-group') as HTMLElement | null;
+    if (!group) return;
+    const entry = MOCK_DATA[group.dataset.key!];
+    if (!entry) return;
+    // Multi-task dots: rebuild layers for new blend mode
+    el.querySelectorAll('.sep-layer').forEach(l => l.remove());
+    const activeTasks = TASKS.filter(t => entry[t]);
+    activeTasks.forEach(task => {
+      const layer = document.createElement('div');
+      layer.className = 'sep-layer';
+      layer.style.background = layerColor(task, entry[task]);
+      layer.style.opacity = (entry[task] === 1 ? 0.75 : 1).toFixed(2);
+      el.appendChild(layer);
     });
-  }
+  });
 }
 
 document.getElementById('theme-toggle')?.addEventListener('click', () => {
@@ -567,5 +623,5 @@ document.getElementById('theme-toggle')?.addEventListener('click', () => {
   const next = html.dataset.theme === 'dark' ? 'light' : 'dark';
   html.dataset.theme = next;
   localStorage.setItem('theme', next);
-  recolorAll();
+  recolorMultiCells();
 });
