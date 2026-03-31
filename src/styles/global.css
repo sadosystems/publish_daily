@@ -1,0 +1,516 @@
+/* ── Reset & Base ──────────────────────────────────────────────── */
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+:root {
+  --cell-gap: 5px;
+  --cell-size: clamp(13px, 1.3vw, 22px);
+  --cell-radius: 3px;
+  --feed-width: 530px;
+}
+
+/* ── Dark Theme ───────────────────────────────────────────────── */
+[data-theme="dark"] {
+  --bg: #0d1117;
+  --surface: #161b22;
+  --border: #30363d;
+  --text: #e6edf3;
+  --text-muted: #7d8590;
+  --cell-empty: #252c35;
+  --color-painting: rgb(171, 35, 18);
+  --color-coding: rgb(45, 56, 155);
+  --color-writing: rgb(40, 140, 35);
+}
+
+/* ── Light Theme ──────────────────────────────────────────────── */
+[data-theme="light"] {
+  --bg: #f7f4f0;
+  --surface: #ddd7ce;
+  --border: #b5ad9e;
+  --text: #3b2a1a;
+  --text-muted: #7a6650;
+  --cell-empty: #e8e3da;
+  --color-painting: rgb(230, 65, 148);
+  --color-coding: rgb(55, 170, 228);
+  --color-writing: rgb(250, 210, 55);
+}
+
+html { background: var(--bg); color: var(--text); }
+
+body {
+  font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Helvetica, Arial, sans-serif;
+  font-size: 14px;
+  line-height: 1.5;
+}
+
+/* ── Calendar Section ──────────────────────────────────────────── */
+#calendar-section {
+  min-height: calc(100vh - 31vh);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: 20px 20px 0;
+  position: relative;
+  z-index: 1;
+}
+
+#calendar-section h1 {
+  font-family: 'Averia Serif Libre', serif;
+  font-size: 28px;
+  font-weight: 700;
+  margin-bottom: 8px;
+  color: var(--text);
+}
+
+/* Legend */
+#legend {
+  display: flex;
+  gap: 16px;
+  margin-bottom: 16px;
+  font-size: 12px;
+  color: var(--text-muted);
+}
+#legend .swatch {
+  display: inline-block;
+  width: 12px;
+  height: 12px;
+  border-radius: var(--cell-radius);
+  margin-right: 4px;
+  vertical-align: middle;
+}
+
+/* Calendar row layout */
+#calendar-flow {
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+  align-items: center;
+  padding: 0 8px;
+}
+
+.calendar-row {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+}
+
+.cal-label {
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 18px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  -webkit-text-stroke: 3px var(--bg);
+  paint-order: stroke fill;
+}
+[data-theme="dark"] .cal-label { color: #fff; }
+[data-theme="light"] .cal-label { color: #3b2a1a; }
+
+.row-months {
+  display: flex;
+  margin-bottom: -6px;
+  height: 16px;
+  line-height: 16px;
+  padding-left: 40px;
+  position: relative;
+  z-index: 2;
+  pointer-events: none;
+}
+.row-months span {
+  text-align: left;
+  pointer-events: none;
+}
+
+.row-body {
+  display: flex;
+  gap: 4px;
+}
+
+.day-labels {
+  display: flex;
+  flex-direction: column;
+  gap: var(--cell-gap);
+  margin-right: 4px;
+  margin-left: -4px;
+  position: relative;
+  z-index: 2;
+}
+.day-labels span {
+  height: var(--cell-size);
+  line-height: var(--cell-size);
+  text-align: right;
+  width: 32px;
+}
+
+.row-grid {
+  display: grid;
+  grid-template-rows: repeat(7, var(--cell-size));
+  grid-auto-columns: var(--cell-size);
+  grid-auto-flow: column;
+  gap: var(--cell-gap);
+}
+
+.cell {
+  width: var(--cell-size);
+  height: var(--cell-size);
+  border-radius: var(--cell-radius);
+  background: var(--cell-empty);
+  cursor: pointer;
+  transition: outline 0.1s;
+  outline: 2px solid transparent;
+  outline-offset: -1px;
+  position: relative;
+  overflow: visible;
+}
+[data-theme="dark"] .cell:hover { outline-color: rgba(255,255,255,0.4); }
+[data-theme="light"] .cell:hover { outline-color: rgba(0,0,0,0.25); }
+
+.cell.future,
+.cell.outside {
+  visibility: hidden;
+}
+.cell-layer {
+  position: absolute;
+  inset: 0;
+  border-radius: var(--cell-radius);
+}
+[data-theme="dark"] .cell-layer { mix-blend-mode: screen; }
+[data-theme="light"] .cell-layer { mix-blend-mode: multiply; }
+
+/* Tooltip */
+#tooltip {
+  position: fixed;
+  pointer-events: none;
+  border: 1px solid var(--border);
+  color: var(--text);
+  border-radius: 6px;
+  font-size: 12px;
+  z-index: 100;
+  opacity: 0;
+  transition: opacity 0.15s;
+  white-space: nowrap;
+  display: flex;
+  align-items: stretch;
+  gap: 0;
+  overflow: hidden;
+  padding: 0;
+}
+[data-theme="dark"] #tooltip { background: #1c2128; }
+[data-theme="light"] #tooltip { background: #f5f0e8; }
+
+#tooltip.visible { opacity: 1; }
+#tooltip .tip-date {
+  padding: 6px 10px;
+  display: flex;
+  align-items: center;
+}
+#tooltip .tip-dots {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  padding: 4px 8px;
+  background: var(--bg);
+  border-left: 1px solid var(--border);
+}
+.tip-dot {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 18px;
+  height: 18px;
+  border-radius: 50%;
+  font-size: 13px;
+  font-weight: 700;
+  font-family: 'JetBrains Mono', monospace;
+}
+[data-theme="dark"] .tip-dot {
+  color: #fff;
+  -webkit-text-stroke: 2px rgba(0,0,0,0.5);
+  paint-order: stroke fill;
+}
+[data-theme="light"] .tip-dot { color: #3b2a1a; }
+
+/* ── Feed peek indicator ───────────────────────────────────────── */
+#feed-peek {
+  text-align: center;
+  padding: 8px 0 4px;
+  color: var(--text-muted);
+  font-size: 13px;
+  letter-spacing: 0.5px;
+  cursor: pointer;
+}
+#feed-peek:hover { color: var(--text); }
+#feed-peek .arrow {
+  display: block;
+  font-size: 18px;
+  animation: bob 2s ease-in-out infinite;
+}
+@keyframes bob {
+  0%, 100% { transform: translateY(0); }
+  50% { transform: translateY(4px); }
+}
+
+/* ── Feed Section ──────────────────────────────────────────────── */
+#feed-section {
+  max-width: var(--feed-width);
+  margin: 0 auto;
+  padding: 0 16px 80px;
+  position: relative;
+  z-index: 1;
+  overflow: visible;
+}
+
+/* Day separator */
+.day-separator {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 20px 0 8px;
+  color: var(--text-muted);
+  font-size: 13px;
+}
+.day-separator:first-child { padding-top: 0; }
+.day-group { /* measurement wrapper, no visual style */ }
+#feed-spacer-top, #feed-spacer-bottom { width: 100%; pointer-events: none; }
+#feed-sentinel-top, #feed-sentinel-bottom { height: 1px; width: 100%; pointer-events: none; }
+
+/* Hide side-info by default (inline mode) */
+.day-separator .sep-info { display: none; }
+
+/* Left-side mode: applied via JS when there's room */
+.day-separator.side-mode {
+  position: relative;
+  padding: 16px 0 4px;
+}
+.day-separator.side-mode .sep-info {
+  position: absolute;
+  right: calc(100% + 12px);
+  top: 16px;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  white-space: nowrap;
+  font-size: 12px;
+}
+.day-separator.side-mode > .sep-dot-wrap,
+.day-separator.side-mode > span,
+.day-separator.side-mode > .sep-line {
+  display: none;
+}
+.day-separator .sep-dot-wrap {
+  width: 16px;
+  height: 16px;
+  position: relative;
+  flex-shrink: 0;
+}
+.day-separator .sep-layer {
+  position: absolute;
+  inset: 0;
+  border-radius: 50%;
+}
+[data-theme="dark"] .day-separator .sep-layer { mix-blend-mode: screen; }
+[data-theme="light"] .day-separator .sep-layer { mix-blend-mode: multiply; }
+
+.day-separator .sep-line {
+  flex: 1;
+  height: 1px;
+  background: var(--border);
+}
+
+/* Painting chip — polaroid style */
+.chip-painting {
+  width: 100%;
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: 0;
+  margin-bottom: 10px;
+  padding: 8px;
+}
+.chip-painting img {
+  width: 100%;
+  display: block;
+  position: relative;
+  z-index: 1;
+}
+.chip-painting .img-wrap {
+  position: relative;
+  overflow: hidden;
+}
+.chip-painting .img-wrap::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  z-index: 0;
+  background-image:
+    linear-gradient(45deg, var(--surface) 25%, transparent 25%),
+    linear-gradient(-45deg, var(--surface) 25%, transparent 25%),
+    linear-gradient(45deg, transparent 75%, var(--surface) 75%),
+    linear-gradient(-45deg, transparent 75%, var(--surface) 75%);
+  background-size: 20px 20px;
+  background-position: 0 0, 0 10px, 10px -10px, -10px 0;
+  background-color: var(--bg);
+}
+
+/* Coding chip — compact PR card */
+.chip-coding {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  margin-bottom: 10px;
+  padding: 10px 14px;
+  font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", "Noto Sans", Helvetica, Arial, sans-serif;
+  font-size: 12px;
+  overflow: hidden;
+}
+.pr-title-row {
+  display: flex;
+  align-items: flex-start;
+  gap: 8px;
+}
+.pr-title-row svg { flex-shrink: 0; margin-top: 1px; }
+.pr-title {
+  font-weight: 600;
+  font-size: 13px;
+  color: var(--text);
+  line-height: 1.4;
+}
+.pr-title .pr-num { color: var(--text-muted); font-weight: 400; }
+.pr-meta-line {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 6px;
+  margin-top: 6px;
+  font-size: 11px;
+  color: var(--text-muted);
+}
+.pr-meta-line .badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 3px;
+  font-weight: 500;
+  font-size: 11px;
+}
+.pr-meta-line .badge.merged { color: #a371f7; }
+.pr-meta-line .badge.open { color: #3fb950; }
+.pr-meta-line .badge svg { width: 12px; height: 12px; fill: currentColor; }
+.pr-meta-line .sep { color: var(--border); }
+.pr-meta-line .additions { color: #3fb950; }
+.pr-meta-line .deletions { color: #f85149; }
+.pr-meta-line .diffbar {
+  display: inline-flex;
+  gap: 1px;
+  vertical-align: middle;
+}
+.pr-meta-line .diffbar span {
+  width: 6px;
+  height: 6px;
+  border-radius: 1px;
+  display: inline-block;
+}
+.pr-meta-line .diffbar .b-add { background: #3fb950; }
+.pr-meta-line .diffbar .b-del { background: #f85149; }
+.pr-meta-line .diffbar .b-neu { background: var(--border); }
+.pr-desc {
+  margin-top: 8px;
+  padding-top: 8px;
+  border-top: 1px solid var(--border);
+  font-size: 12px;
+  color: var(--text-muted);
+  line-height: 1.5;
+  background: var(--bg);
+  margin-left: -14px;
+  margin-right: -14px;
+  margin-bottom: -10px;
+  padding: 8px 14px 10px;
+  display: -webkit-box;
+  -webkit-line-clamp: 2;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+}
+
+/* Writing chip — header + prose with fade */
+.chip-writing {
+  background: none;
+  border: none;
+  border-radius: 0;
+  margin-bottom: 10px;
+  overflow: hidden;
+  padding: 0;
+  position: relative;
+}
+.chip-writing h3 {
+  font-family: 'Averia Serif Libre', serif;
+  font-size: 20px;
+  font-weight: 400;
+  color: var(--text);
+  margin-bottom: 6px;
+  line-height: 1.25;
+  letter-spacing: -0.01em;
+}
+.chip-writing .prose {
+  font-family: 'Libre Baskerville', Georgia, serif;
+  font-size: 11px;
+  line-height: 1.85;
+  letter-spacing: 0.01em;
+  max-height: calc(1.85em * 5);
+  overflow: hidden;
+  text-indent: 1.5em;
+}
+[data-theme="dark"] .chip-writing .prose { color: rgba(230, 237, 243, 0.7); }
+[data-theme="light"] .chip-writing .prose { color: rgba(27, 28, 28, 0.65); }
+
+.chip-writing .prose-fade {
+  position: absolute;
+  bottom: 0;
+  left: 0;
+  right: 0;
+  height: 60px;
+  background: linear-gradient(to bottom, transparent, var(--bg));
+  display: flex;
+  align-items: flex-end;
+  justify-content: center;
+  bottom: -4px;
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 11px;
+  font-weight: 700;
+  color: var(--text-muted);
+  letter-spacing: 0.05em;
+  cursor: pointer;
+  -webkit-text-stroke: 3px var(--bg);
+  paint-order: stroke fill;
+  text-shadow: 0 0 3px var(--bg), 0 0 6px var(--bg), 0 0 10px var(--bg), 0 2px 8px var(--bg);
+}
+.chip-writing .prose-fade:hover {
+  color: var(--text);
+}
+
+/* ── Theme Toggle ─────────────────────────────────────────────── */
+.theme-toggle {
+  position: fixed;
+  top: 12px;
+  right: 12px;
+  z-index: 200;
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: 50%;
+  width: 36px;
+  height: 36px;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: var(--text-muted);
+  transition: color 0.2s, background 0.2s;
+}
+.theme-toggle:hover {
+  color: var(--text);
+}
+.theme-toggle svg {
+  width: 18px;
+  height: 18px;
+}
+[data-theme="dark"] .theme-toggle .icon-sun { display: block; }
+[data-theme="dark"] .theme-toggle .icon-moon { display: none; }
+[data-theme="light"] .theme-toggle .icon-sun { display: none; }
+[data-theme="light"] .theme-toggle .icon-moon { display: block; }

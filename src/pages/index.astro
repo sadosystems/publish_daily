@@ -1,0 +1,15 @@
+---
+import Layout from '../layouts/Layout.astro';
+import ThemeToggle from '../components/ThemeToggle.astro';
+import CalendarSection from '../components/CalendarSection.astro';
+import FeedSection from '../components/FeedSection.astro';
+import '../styles/global.css';
+---
+
+<Layout title="Publish Daily">
+  <div id="tooltip"></div>
+  <ThemeToggle />
+  <CalendarSection />
+  <FeedSection />
+  <script src="../scripts/main.ts"></script>
+</Layout>

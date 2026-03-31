@@ -1,0 +1,19 @@
+<section id="calendar-section">
+  <h1>Publish Daily</h1>
+  <div id="legend">
+    <span><span class="swatch" style="background:var(--color-painting)"></span>painting</span>
+    <span><span class="swatch" style="background:var(--color-coding)"></span>coding</span>
+    <span><span class="swatch" style="background:var(--color-writing)"></span>writing</span>
+  </div>
+  <div id="calendar-flow"></div>
+  <div id="feed-peek">
+    <span class="arrow">&#x25BE;</span>
+    feed
+  </div>
+</section>
+
+<script>
+  document.getElementById('feed-peek')?.addEventListener('click', () => {
+    document.getElementById('feed-section')?.scrollIntoView({ behavior: 'smooth' });
+  });
+</script>
