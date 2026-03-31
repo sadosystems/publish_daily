@@ -1,0 +1,37 @@
+---
+interface Props {
+  entry: { painting: number; coding: number; writing: number };
+  rng: () => number;
+  spread?: number;
+}
+const { entry, rng, spread = 5.5 } = Astro.props;
+
+type Task = 'painting' | 'coding' | 'writing';
+const tasks: Task[] = (['painting', 'coding', 'writing'] as const).filter(t => entry[t]);
+
+function cellColor(task: Task, level: number): string {
+  const suffix = level >= 2 ? 'l2' : 'l1';
+  return `var(--color-${task}-cell-${suffix})`;
+}
+function layerColor(task: Task, level: number): string {
+  return level >= 2 ? `var(--color-${task}-l2)` : `var(--color-${task})`;
+}
+
+const isSingle = tasks.length === 1;
+const singleBg = isSingle ? cellColor(tasks[0], entry[tasks[0]]) : undefined;
+
+const layers = !isSingle ? tasks.map(task => {
+  const level = entry[task];
+  const dx = (rng() - 0.5) * spread;
+  const dy = (rng() - 0.5) * spread;
+  return { bg: layerColor(task, level), opacity: (level === 1 ? 0.75 : 1).toFixed(2), transform: `translate(${dx}px, ${dy}px)` };
+}) : [];
+---
+<div
+  class="sep-dot-wrap"
+  style={isSingle ? `border-radius:50%;background:${singleBg}` : 'border-radius:50%'}
+>
+  {layers.map(l => (
+    <div class="sep-layer" style={`background:${l.bg};opacity:${l.opacity};transform:${l.transform}`}></div>
+  ))}
+</div>

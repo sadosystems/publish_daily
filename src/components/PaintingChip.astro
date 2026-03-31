@@ -1,0 +1,15 @@
+---
+interface Props {
+  dateKey: string;
+  imgSrc: string;
+  fallbackSrc: string;
+  index: number;
+}
+const { dateKey, imgSrc, fallbackSrc, index } = Astro.props;
+const chipId = `chip-${dateKey}-painting${index > 0 ? `-${index}` : ''}`;
+---
+<div class="chip-painting" id={chipId}>
+  <div class="img-wrap">
+    <img src={imgSrc} alt="painting" loading="lazy" onerror={`this.onerror=null;this.src='/${fallbackSrc}'`} />
+  </div>
+</div>

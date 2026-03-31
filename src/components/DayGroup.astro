@@ -1,0 +1,70 @@
+---
+import SepDotWrap from './SepDotWrap.astro';
+import PaintingChip from './PaintingChip.astro';
+import CodingChip from './CodingChip.astro';
+import WritingChip from './WritingChip.astro';
+import type { PRData } from '../lib/github';
+
+interface WritingEntry {
+  title: string;
+  preview: string;
+  slug: string;
+}
+
+interface Props {
+  day: {
+    id: string;
+    paintings: string[];
+    writingEntries: WritingEntry[];
+    prData: PRData[];
+  };
+}
+const { day } = Astro.props;
+const { id, paintings, writingEntries, prData } = day;
+
+// Compute levels for SepDotWrap (min(arr.length, 2))
+const entry = {
+  painting: Math.min(paintings.length, 2),
+  coding: Math.min(prData.length, 2),
+  writing: Math.min(writingEntries.length, 2),
+};
+
+const weekdays = ['Sunday','Monday','Tuesday','Wednesday','Thursday','Friday','Saturday'];
+const d = new Date(id + 'T12:00:00');
+const dayLabel = `${id} &middot; ${weekdays[d.getDay()]}`;
+
+function seededRng(key: string): () => number {
+  let h = 0;
+  for (let i = 0; i < key.length; i++) { h = ((h << 5) - h + key.charCodeAt(i)) | 0; }
+  return () => { h = (h * 16807 + 0) & 0x7fffffff; return (h & 0xffff) / 0x10000; };
+}
+const rng = seededRng(id);
+const rng2 = seededRng(id + '-side');
+
+const paintImgs = ['publish_daily_1.png', 'publish_daily_2.png', 'logo_card.png'];
+---
+<div class="day-group" data-key={id}>
+  <div class="day-separator" id={`day-${id}`}>
+    <SepDotWrap entry={entry} rng={rng} />
+    <span set:html={dayLabel} />
+    <div class="sep-line"></div>
+    <div class="sep-info">
+      <SepDotWrap entry={entry} rng={rng2} />
+      <span set:html={dayLabel} />
+    </div>
+  </div>
+
+  {paintings.map((imgPath, i) => {
+    const fallbackRng = seededRng(id + '-paint-' + i);
+    const fallbackSrc = paintImgs[Math.floor(fallbackRng() * paintImgs.length)];
+    return <PaintingChip dateKey={id} imgSrc={imgPath} fallbackSrc={fallbackSrc} index={i} />;
+  })}
+
+  {prData.map((pr, i) => (
+    <CodingChip dateKey={id + (i > 0 ? `-${i}` : '')} pr={pr} />
+  ))}
+
+  {writingEntries.map(w => (
+    <WritingChip slug={w.slug} title={w.title} preview={w.preview} />
+  ))}
+</div>

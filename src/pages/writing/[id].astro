@@ -1,0 +1,57 @@
+---
+import { getCollection, render } from 'astro:content';
+import Layout from '../../layouts/Layout.astro';
+import '../../styles/global.css';
+
+export async function getStaticPaths() {
+  const entries = await getCollection('writing');
+  return entries.map(entry => ({
+    params: { id: entry.id },
+    props: { entry },
+  }));
+}
+
+const { entry } = Astro.props;
+const { Content } = await render(entry);
+---
+<Layout title={entry.data.title}>
+  <article class="writing-page">
+    <h1>{entry.data.title}</h1>
+    <Content />
+    <a class="back-link" href="/">&larr; back to feed</a>
+  </article>
+</Layout>
+
+<style>
+  .writing-page {
+    max-width: 600px;
+    margin: 80px auto;
+    padding: 0 24px;
+  }
+  .writing-page h1 {
+    font-family: var(--font-display);
+    font-size: 28px;
+    font-weight: 400;
+    color: var(--text);
+    margin-bottom: 24px;
+    line-height: 1.25;
+  }
+  .writing-page :global(p) {
+    font-family: var(--font-prose);
+    font-size: 14px;
+    line-height: 1.85;
+    color: var(--text-prose);
+    margin-bottom: 1.2em;
+  }
+  .back-link {
+    display: inline-block;
+    margin-top: 32px;
+    font-family: var(--font-sans);
+    font-size: 13px;
+    color: var(--text-secondary);
+    text-decoration: none;
+  }
+  .back-link:hover {
+    color: var(--text);
+  }
+</style>

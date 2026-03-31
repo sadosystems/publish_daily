@@ -299,9 +299,7 @@ body {
   font-size: 13px;
 }
 .day-separator:first-child { padding-top: 0; }
-.day-group { /* measurement wrapper, no visual style */ }
-#feed-spacer-top, #feed-spacer-bottom { width: 100%; pointer-events: none; }
-#feed-sentinel-top, #feed-sentinel-bottom { height: 1px; width: 100%; pointer-events: none; }
+.day-group { }
 
 /* Hide side-info by default (inline mode) */
 .day-separator .sep-info { display: none; }
@@ -463,11 +461,10 @@ body {
   border: none;
   border-radius: 0;
   margin-bottom: 10px;
-  overflow: hidden;
   padding: 0;
   position: relative;
 }
-.chip-writing h3 {
+.chip-writing h2 {
   font-family: var(--font-display);
   font-size: 20px;
   font-weight: 400;
@@ -476,16 +473,15 @@ body {
   line-height: 1.25;
   letter-spacing: -0.01em;
 }
-.chip-writing .prose {
+.chip-writing p {
   font-family: var(--font-prose);
   font-size: 11px;
   line-height: 1.85;
   letter-spacing: 0.01em;
-  max-height: calc(1.85em * 5);
+  max-height: calc(1.85em * 7);
   overflow: hidden;
-  text-indent: 1.5em;
+  color: var(--text-prose);
 }
-.chip-writing .prose { color: var(--text-prose); }
 
 .chip-writing .prose-fade {
   position: absolute;

@@ -1,1 +1,39 @@
-<section id="feed-section"></section>
+---
+import { getCollection, render } from 'astro:content';
+import { fetchPRData } from '../lib/github';
+import DayGroup from './DayGroup.astro';
+
+const allDays = await getCollection('days');
+const allWriting = await getCollection('writing');
+const sorted = allDays.sort((a, b) => b.id.localeCompare(a.id));
+
+// Build a lookup for writing entries
+const writingMap = new Map<string, { title: string; preview: string; slug: string }>();
+for (const w of allWriting) {
+  const { Content } = await render(w);
+  // Get raw body text for preview
+  const body = w.body ?? '';
+  const plainText = body
+    .replace(/^---[\s\S]*?---/, '')
+    .replace(/^#+\s.*/gm, '')
+    .replace(/\n+/g, ' ')
+    .trim();
+  const preview = plainText;
+  writingMap.set(w.id, { title: w.data.title, preview, slug: w.id });
+}
+
+// Resolve data for each day
+const resolvedDays = await Promise.all(sorted.map(async (day) => {
+  const paintings = day.data.painting;
+  const writingEntries = day.data.writing
+    .map((slug: string) => writingMap.get(slug))
+    .filter(Boolean) as { title: string; preview: string; slug: string }[];
+  const prData = await Promise.all(day.data.code.map((url: string) => fetchPRData(url)));
+  return { id: day.id, paintings, writingEntries, prData };
+}));
+---
+<section id="feed-section">
+  {resolvedDays.map(day => (
+    <DayGroup day={day} />
+  ))}
+</section>

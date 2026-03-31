@@ -1,9 +1,20 @@
 ---
+import { getCollection } from 'astro:content';
 import Layout from '../layouts/Layout.astro';
 import ThemeToggle from '../components/ThemeToggle.astro';
 import CalendarSection from '../components/CalendarSection.astro';
 import FeedSection from '../components/FeedSection.astro';
 import '../styles/global.css';
+
+const allDays = await getCollection('days');
+const calendarData: Record<string, { painting: number; coding: number; writing: number }> = {};
+for (const day of allDays) {
+  calendarData[day.id] = {
+    painting: Math.min(day.data.painting.length, 2),
+    coding: Math.min(day.data.code.length, 2),
+    writing: Math.min(day.data.writing.length, 2),
+  };
+}
 ---
 
 <Layout title="Publish Daily">
@@ -11,5 +22,10 @@ import '../styles/global.css';
   <ThemeToggle />
   <CalendarSection />
   <FeedSection />
-  <script src="../scripts/main.ts"></script>
+  <script is:inline define:vars={{ calendarData }}>
+    window.__CALENDAR_DATA__ = calendarData;
+  </script>
+  <script>
+    import '../scripts/main.ts';
+  </script>
 </Layout>

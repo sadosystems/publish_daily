@@ -8,7 +8,7 @@
     "preview": "bunx --bun astro preview"
   },
   "dependencies": {
-    "astro": "^5.7.10"
+    "astro": "^6.1.2"
   },
   "devDependencies": {
     "@types/bun": "^1.3.11"

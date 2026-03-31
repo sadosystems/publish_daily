@@ -1,0 +1,13 @@
+---
+interface Props {
+  slug: string;
+  title: string;
+  preview: string;
+}
+const { slug, title, preview } = Astro.props;
+---
+<div class="chip-writing">
+  <h2>{title}</h2>
+  <p>{preview}</p>
+  <a class="prose-fade" href={`/writing/${slug}`}>continue reading &rarr;</a>
+</div>
