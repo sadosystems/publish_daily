@@ -12,12 +12,12 @@
 *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
 
 :root {
-  --bg: #fffcf7;
-  --surface: #f4ebdf;
-  --border: #b5ad9e;
-  --text: #3b2a1a;
-  --text-muted: #7a6650;
-  --cell-empty: #f0e8d9;
+  --bg: #ffffff;
+  --surface: #fcf5ec;
+  --border: #bcb5af;
+  --text: #3b241a;
+  --text-muted: #6d5337;
+  --cell-empty: #f0ebe3;
   --cell-gap: 5px;
   --cell-size: clamp(13px, 1.3vw, 22px);
   --cell-radius: 3px;
@@ -209,8 +209,6 @@ body {
   font-weight: 700;
   font-family: 'JetBrains Mono', monospace;
   color: #3b2a1a;
-  -webkit-text-stroke: 2px rgba(0,0,0,0.5);
-  paint-order: stroke fill;
 }
 
 /* ── Feed peek indicator ───────────────────────────────────────── */
@@ -663,6 +661,17 @@ function addCellLayers(cell, entry) {
     layer.style.transform = `translate(${dx}px, ${dy}px)`;
     cell.appendChild(layer);
   });
+
+  // Lift the darkest overlaps with a white veil
+  if (tasks.length >= 2) {
+    const veil = document.createElement('div');
+    veil.className = 'cell-layer';
+    veil.style.background = '#fff';
+    veil.style.mixBlendMode = 'screen';
+    veil.style.opacity = '0.13';
+    veil.style.transform = 'none';
+    cell.appendChild(veil);
+  }
 }
 
 // ── Build Calendar ───────────────────────────────────────────────
