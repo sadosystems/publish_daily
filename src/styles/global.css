@@ -47,10 +47,10 @@
   --bg: #f7f4f0;
   --surface: #ddd7ce;
   --border: #b5ad9e;
-  --text: #3b2a1a;
+  --text: #332313;
   --text-bold: #3b2a1a;
-  --text-muted: #7a6650;
-  --text-prose: rgba(27, 28, 28, 0.65);
+  --text-muted: #553421;
+  --text-prose: rgb(28, 27, 27);
   --cell-empty: #e8e3da;
   --cell-hover: rgba(0, 0, 0, 0.25);
   --blend-mode: multiply;
@@ -76,7 +76,7 @@ html { background: var(--bg); color: var(--text); }
 
 body {
   font-family: var(--font-sans);
-  font-size: 14px;
+  font-size: 17px;
   line-height: 1.5;
 }
 
@@ -94,7 +94,7 @@ body {
 
 #calendar-section h1 {
   font-family: var(--font-display);
-  font-size: 28px;
+  font-size: 34px;
   font-weight: 700;
   margin-bottom: 8px;
   color: var(--text);
@@ -105,7 +105,7 @@ body {
   display: flex;
   gap: 16px;
   margin-bottom: 16px;
-  font-size: 12px;
+  font-size: 14px;
   color: var(--text-muted);
 }
 #legend .swatch {
@@ -134,7 +134,7 @@ body {
 
 .cal-label {
   font-family: var(--font-mono);
-  font-size: 18px;
+  font-size: 22px;
   font-weight: 700;
   text-transform: uppercase;
   letter-spacing: 0.05em;
@@ -219,7 +219,7 @@ body {
   border: 1px solid var(--border);
   color: var(--text);
   border-radius: 6px;
-  font-size: 12px;
+  font-size: 14px;
   z-index: 100;
   opacity: 0;
   transition: opacity 0.15s;
@@ -253,7 +253,7 @@ body {
   width: 18px;
   height: 18px;
   border-radius: 50%;
-  font-size: 13px;
+  font-size: 16px;
   font-weight: 700;
   font-family: var(--font-mono);
 }
@@ -264,14 +264,14 @@ body {
   text-align: center;
   padding: 8px 0 4px;
   color: var(--text-muted);
-  font-size: 13px;
+  font-size: 16px;
   letter-spacing: 0.5px;
   cursor: pointer;
 }
 #feed-peek:hover { color: var(--text); }
 #feed-peek .arrow {
   display: block;
-  font-size: 18px;
+  font-size: 22px;
   animation: bob 2s ease-in-out infinite;
 }
 @keyframes bob {
@@ -379,80 +379,63 @@ body {
 
 /* Coding chip — compact PR card */
 .chip-coding {
-  background: var(--surface);
-  border: 1px solid var(--border);
-  border-radius: 6px;
+  background: none;
+  border: none;
+  border-radius: 0;
   margin-bottom: 10px;
-  padding: 10px 14px;
+  padding: 0;
   font-family: var(--font-sans);
   font-size: 12px;
   overflow: hidden;
 }
-.pr-title-row {
+.pr-header {
   display: flex;
-  align-items: flex-start;
-  gap: 8px;
-}
-.pr-title-row svg { flex-shrink: 0; margin-top: 1px; }
-.pr-title {
-  font-weight: 600;
-  font-size: 13px;
-  color: var(--text);
-  line-height: 1.4;
-}
-.pr-title .pr-num { color: var(--text-muted); font-weight: 400; }
-.pr-meta-line {
-  display: flex;
-  align-items: center;
+  align-items: baseline;
   flex-wrap: wrap;
   gap: 6px;
-  margin-top: 6px;
-  font-size: 11px;
-  color: var(--text-muted);
 }
-.pr-meta-line .badge {
+.pr-header > svg { flex-shrink: 0; align-self: center; }
+a.pr-title {
+  font-weight: 600;
+  font-size: 15px;
+  color: var(--text);
+  line-height: 1.4;
+  text-decoration: none;
+}
+a.pr-title:hover {
+  text-decoration: underline;
+}
+.pr-title .pr-num { color: var(--text-muted); font-weight: 400; }
+.pr-meta {
   display: inline-flex;
   align-items: center;
-  gap: 3px;
-  font-weight: 500;
+  gap: 6px;
   font-size: 11px;
+  color: var(--text-muted);
+  white-space: nowrap;
 }
-.pr-meta-line .badge.merged { color: var(--color-merged); }
-.pr-meta-line .badge.open { color: var(--color-open); }
-.pr-meta-line .badge svg { width: 12px; height: 12px; fill: currentColor; }
-.pr-meta-line .sep { color: var(--border); }
-.pr-meta-line .additions { color: var(--color-additions); }
-.pr-meta-line .deletions { color: var(--color-deletions); }
-.pr-meta-line .diffbar {
+.pr-meta .sep { color: var(--border); }
+.pr-meta .additions { color: var(--color-additions); }
+.pr-meta .deletions { color: var(--color-deletions); }
+.pr-meta .diffbar {
   display: inline-flex;
   gap: 1px;
   vertical-align: middle;
 }
-.pr-meta-line .diffbar span {
+.pr-meta .diffbar span {
   width: 6px;
   height: 6px;
   border-radius: 1px;
   display: inline-block;
 }
-.pr-meta-line .diffbar .b-add { background: var(--color-additions); }
-.pr-meta-line .diffbar .b-del { background: var(--color-deletions); }
-.pr-meta-line .diffbar .b-neu { background: var(--border); }
+.pr-meta .diffbar .b-add { background: var(--color-additions); }
+.pr-meta .diffbar .b-del { background: var(--color-deletions); }
+.pr-meta .diffbar .b-neu { background: var(--border); }
 .pr-desc {
   margin-top: 8px;
-  padding-top: 8px;
-  border-top: 1px solid var(--border);
   font-size: 12px;
   color: var(--text-muted);
   line-height: 1.5;
-  background: var(--bg);
-  margin-left: -14px;
-  margin-right: -14px;
-  margin-bottom: -10px;
-  padding: 8px 14px 10px;
-  display: -webkit-box;
-  -webkit-line-clamp: 2;
-  -webkit-box-orient: vertical;
-  overflow: hidden;
 }
 
 /* Writing chip — header + prose with fade */
@@ -473,7 +456,7 @@ body {
   line-height: 1.25;
   letter-spacing: -0.01em;
 }
-.chip-writing p {
+.chip-writing-body {
   font-family: var(--font-prose);
   font-size: 11px;
   line-height: 1.85;
@@ -481,6 +464,51 @@ body {
   max-height: calc(1.85em * 7);
   overflow: hidden;
   color: var(--text-prose);
+}
+.chip-writing-body p {
+  margin-bottom: 0.6em;
+}
+.chip-writing-body h2,
+.chip-writing-body h3,
+.chip-writing-body h4 {
+  font-family: var(--font-display);
+  font-weight: 400;
+  color: var(--text);
+  margin-top: 0.6em;
+  margin-bottom: 0.3em;
+  line-height: 1.3;
+}
+.chip-writing-body h2 { font-size: 14px; }
+.chip-writing-body h3 { font-size: 12px; }
+.chip-writing-body h4 { font-size: 11px; }
+.chip-writing-body ul,
+.chip-writing-body ol {
+  padding-left: 1.3em;
+  margin-bottom: 0.6em;
+}
+.chip-writing-body li {
+  margin-bottom: 0.15em;
+}
+.chip-writing-body li::marker {
+  color: var(--text-muted);
+}
+.chip-writing-body blockquote {
+  border-left: 2px solid var(--border);
+  padding-left: 0.8em;
+  color: var(--text-muted);
+  font-style: italic;
+  margin: 0.5em 0;
+}
+.chip-writing-body code {
+  font-family: var(--font-mono);
+  font-size: 0.9em;
+  background: var(--surface);
+  padding: 0.1em 0.25em;
+  border-radius: 2px;
+}
+.chip-writing-body strong {
+  color: var(--text);
+  font-weight: 700;
 }
 
 .chip-writing .prose-fade {

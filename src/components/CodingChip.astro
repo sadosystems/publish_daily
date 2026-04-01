@@ -19,27 +19,22 @@ const dB = tot > 0 ? Math.round((pr.dels / tot) * 5) : 0;
 const nB = Math.max(0, 5 - aB - dB);
 ---
 <div class="chip-coding" id={`chip-${dateKey}-coding`}>
-  <div class="pr-title-row">
+  <div class="pr-header">
     <svg width="16" height="16" viewBox="0 0 16 16" fill={iconColor}><path d={iconPath}></path></svg>
-    <span class="pr-title">{pr.title} <span class="pr-num">#{pr.num}</span></span>
-  </div>
-  <div class="pr-meta-line">
-    <span class={`badge ${pr.merged ? 'merged' : 'open'}`}>
-      <svg width="12" height="12" viewBox="0 0 16 16" fill="currentColor"><path d={iconPath}></path></svg>
-      {pr.merged ? 'Merged' : 'Open'}
-    </span>
-    <span class="sep">&middot;</span>
-    <span>{pr.files} file{pr.files > 1 ? 's' : ''}</span>
-    <span class="sep">&middot;</span>
-    <span>{pr.commits} commit{pr.commits > 1 ? 's' : ''}</span>
-    <span class="sep">&middot;</span>
-    <span class="additions">+{pr.adds}</span>
-    <span class="deletions">&minus;{pr.dels}</span>
-    <span class="diffbar">
-      {Array.from({ length: aB }, () => null).map(() => <span class="b-add" />)}
-      {Array.from({ length: dB }, () => null).map(() => <span class="b-del" />)}
-      {Array.from({ length: nB }, () => null).map(() => <span class="b-neu" />)}
+    <a class="pr-title" href={pr.url} target="_blank" rel="noopener">{pr.title} <span class="pr-num">#{pr.num}</span></a>
+    <span class="pr-meta">
+      <span>{pr.files} file{pr.files > 1 ? 's' : ''} changed</span>
+      <span class="sep">|</span>
+      <span>{pr.commits} commit{pr.commits > 1 ? 's' : ''}</span>
+      <span class="sep">|</span>
+      <span class="additions">+{pr.adds}</span>
+      <span class="deletions">&minus;{pr.dels}</span>
+      <span class="diffbar">
+        {Array.from({ length: aB }, () => null).map(() => <span class="b-add" />)}
+        {Array.from({ length: dB }, () => null).map(() => <span class="b-del" />)}
+        {Array.from({ length: nB }, () => null).map(() => <span class="b-neu" />)}
+      </span>
     </span>
   </div>
-  <div class="pr-desc">{pr.desc}</div>
+  {pr.desc?.trim() && <div class="pr-desc">{pr.desc}</div>}
 </div>

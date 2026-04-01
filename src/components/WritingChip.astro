@@ -8,6 +8,6 @@ const { slug, title, preview } = Astro.props;
 ---
 <div class="chip-writing">
   <h2>{title}</h2>
-  <p>{preview}</p>
+  <div class="chip-writing-body" set:html={preview} />
   <a class="prose-fade" href={`/writing/${slug}`}>continue reading &rarr;</a>
 </div>

@@ -1,6 +1,7 @@
 ---
-import { getCollection, render } from 'astro:content';
+import { getCollection } from 'astro:content';
 import { fetchPRData } from '../lib/github';
+import { marked } from 'marked';
 import DayGroup from './DayGroup.astro';
 
 const allDays = await getCollection('days');
@@ -10,15 +11,8 @@ const sorted = allDays.sort((a, b) => b.id.localeCompare(a.id));
 // Build a lookup for writing entries
 const writingMap = new Map<string, { title: string; preview: string; slug: string }>();
 for (const w of allWriting) {
-  const { Content } = await render(w);
-  // Get raw body text for preview
   const body = w.body ?? '';
-  const plainText = body
-    .replace(/^---[\s\S]*?---/, '')
-    .replace(/^#+\s.*/gm, '')
-    .replace(/\n+/g, ' ')
-    .trim();
-  const preview = plainText;
+  const preview = await marked.parse(body);
   writingMap.set(w.id, { title: w.data.title, preview, slug: w.id });
 }
 

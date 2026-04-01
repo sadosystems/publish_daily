@@ -43,6 +43,96 @@ const { Content } = await render(entry);
     color: var(--text-prose);
     margin-bottom: 1.2em;
   }
+  .writing-page :global(h2) {
+    font-family: var(--font-display);
+    font-size: 22px;
+    font-weight: 400;
+    color: var(--text);
+    margin-top: 2em;
+    margin-bottom: 0.6em;
+    line-height: 1.3;
+  }
+  .writing-page :global(h3) {
+    font-family: var(--font-display);
+    font-size: 18px;
+    font-weight: 400;
+    color: var(--text);
+    margin-top: 1.6em;
+    margin-bottom: 0.5em;
+    line-height: 1.3;
+  }
+  .writing-page :global(h4) {
+    font-family: var(--font-sans);
+    font-size: 14px;
+    font-weight: 600;
+    color: var(--text);
+    margin-top: 1.4em;
+    margin-bottom: 0.4em;
+    line-height: 1.4;
+  }
+  .writing-page :global(ul),
+  .writing-page :global(ol) {
+    font-family: var(--font-prose);
+    font-size: 14px;
+    line-height: 1.85;
+    color: var(--text-prose);
+    margin-bottom: 1.2em;
+    padding-left: 1.5em;
+  }
+  .writing-page :global(li) {
+    margin-bottom: 0.3em;
+  }
+  .writing-page :global(li)::marker {
+    color: var(--text-muted);
+  }
+  .writing-page :global(blockquote) {
+    border-left: 3px solid var(--border);
+    padding-left: 1em;
+    margin: 1.2em 0;
+    color: var(--text-muted);
+    font-style: italic;
+  }
+  .writing-page :global(blockquote p) {
+    color: var(--text-muted);
+  }
+  .writing-page :global(code) {
+    font-family: var(--font-mono);
+    font-size: 0.85em;
+    background: var(--surface);
+    padding: 0.15em 0.35em;
+    border-radius: 3px;
+  }
+  .writing-page :global(pre) {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 4px;
+    padding: 1em;
+    overflow-x: auto;
+    margin-bottom: 1.2em;
+  }
+  .writing-page :global(pre code) {
+    background: none;
+    padding: 0;
+    font-size: 13px;
+    line-height: 1.5;
+  }
+  .writing-page :global(hr) {
+    border: none;
+    border-top: 1px solid var(--border);
+    margin: 2em 0;
+  }
+  .writing-page :global(strong) {
+    color: var(--text);
+    font-weight: 700;
+  }
+  .writing-page :global(a) {
+    color: var(--text);
+    text-decoration: underline;
+    text-underline-offset: 2px;
+  }
+  .writing-page :global(a:hover) {
+    color: var(--text-bold);
+  }
   .back-link {
     display: inline-block;
     margin-top: 32px;

@@ -1,0 +1,3 @@
+- Static HN/Lobsters discussion threads on writing pages — add `hn`/`lobsters` URLs to writing frontmatter, fetch comment trees from Algolia/Lobsters API at build time, render top N comments as static HTML with "join discussion" link. Set up Netlify build hook on a cron to refresh periodically.
+- Netlify hosting — deploy the Astro static site to Netlify.
+- rules_bun — create a Bun Bazel rule and pull this site into the Bazel monorepo.
