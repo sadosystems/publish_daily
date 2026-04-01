@@ -1,6 +1,7 @@
 ---
 import { getCollection, render } from 'astro:content';
 import Layout from '../../layouts/Layout.astro';
+import ThemeToggle from '../../components/ThemeToggle.astro';
 import '../../styles/global.css';
 
 export async function getStaticPaths() {
@@ -15,6 +16,7 @@ const { entry } = Astro.props;
 const { Content } = await render(entry);
 ---
 <Layout title={entry.data.title}>
+  <ThemeToggle />
   <article class="writing-page">
     <h1>{entry.data.title}</h1>
     <Content />

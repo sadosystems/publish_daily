@@ -1,0 +1,46 @@
+---
+import Layout from '../layouts/Layout.astro';
+import ThemeToggle from '../components/ThemeToggle.astro';
+import '../styles/global.css';
+---
+<Layout title="not found">
+  <ThemeToggle />
+  <div class="not-found">
+    <h1>404</h1>
+    <p>nothing here</p>
+    <a href="/">&larr; back to feed</a>
+  </div>
+</Layout>
+
+<style>
+  .not-found {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    min-height: 80vh;
+    text-align: center;
+  }
+  .not-found h1 {
+    font-family: var(--font-mono);
+    font-size: 72px;
+    font-weight: 700;
+    color: var(--text-muted);
+    margin-bottom: 8px;
+  }
+  .not-found p {
+    font-family: var(--font-prose);
+    font-size: 17px;
+    color: var(--text-muted);
+    margin-bottom: 32px;
+  }
+  .not-found a {
+    font-family: var(--font-sans);
+    font-size: 16px;
+    color: var(--text-muted);
+    text-decoration: none;
+  }
+  .not-found a:hover {
+    color: var(--text);
+  }
+</style>
