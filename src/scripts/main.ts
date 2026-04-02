@@ -127,6 +127,7 @@ function buildCalendar(): void {
   const splits = calendarFlow.dataset.measured ? calcSplits() : [allWeeks.length];
 
   let weekOffset = 0;
+  let lastMonthKey = '';
   splits.forEach((rowWeekCount) => {
     const rowWeeks = allWeeks.slice(weekOffset, weekOffset + rowWeekCount);
     weekOffset += rowWeekCount;
@@ -136,25 +137,27 @@ function buildCalendar(): void {
 
     const monthBar = document.createElement('div');
     monthBar.className = 'row-months cal-label';
-
-    let lastMonth = -1;
     const labelData: { month: number; year: number; col: number }[] = [];
     rowWeeks.forEach((sunday, colIdx) => {
       const thu = new Date(sunday);
       thu.setDate(thu.getDate() + 3);
       const m = thu.getMonth();
       const y = thu.getFullYear();
-      if (m !== lastMonth) {
+      const key = `${y}-${m}`;
+      if (key !== lastMonthKey) {
         labelData.push({ month: m, year: y, col: colIdx });
-        lastMonth = m;
+        lastMonthKey = key;
       }
     });
 
+    let isFirstLabel = (weekOffset - rowWeekCount === 0);
     labelData.forEach((ld, i) => {
       const span = document.createElement('span');
-      span.textContent = monthNames[ld.month];
       const nextCol = (i < labelData.length - 1) ? labelData[i + 1].col : rowWeekCount;
-      span.dataset.cols = String(nextCol - ld.col);
+      const cols = nextCol - ld.col;
+      const skip = isFirstLabel && i === 0 && labelData.length > 1 && cols < 3;
+      span.textContent = skip ? '' : monthNames[ld.month];
+      span.dataset.cols = String(cols);
       monthBar.appendChild(span);
     });
 
@@ -278,19 +281,13 @@ window.addEventListener('resize', () => {
 });
 
 // ── Theme Toggle ────────────────────────────────────────────────
-// Single-task cells and all feed elements use var() references,
-// so they update automatically. Only multi-task calendar cells
-// with layer divs need JS recoloring.
-document.getElementById('theme-toggle')?.addEventListener('click', () => {
-  const html = document.documentElement;
-  const next = html.dataset.theme === 'dark' ? 'light' : 'dark';
-  html.dataset.theme = next;
-  localStorage.setItem('theme', next);
-
+// The toggle click is handled by ThemeToggle.astro.
+// Recolor multi-task calendar cells when the theme attribute changes.
+new MutationObserver(() => {
   calendarFlow.querySelectorAll('.cell').forEach(cell => {
     const el = cell as HTMLElement;
     if (el.querySelector('.cell-layer')) {
       recolorCell(el, CALENDAR_DATA[el.dataset.date!]);
     }
   });
-});
+}).observe(document.documentElement, { attributes: true, attributeFilter: ['data-theme'] });
