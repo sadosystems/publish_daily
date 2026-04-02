@@ -212,8 +212,10 @@ function buildCalendar(): void {
           cell.addEventListener('click', () => {
             const target = document.getElementById('day-' + cell.dataset.date);
             if (target) {
-              target.scrollIntoView({ behavior: 'smooth', block: 'center' });
-              highlightDayEl(target);
+              const dist = Math.abs(target.getBoundingClientRect().top);
+              const chipHeight = 200;
+              const behavior = dist > chipHeight * 4 ? 'instant' : 'smooth';
+              target.scrollIntoView({ behavior, block: 'start' });
             }
           });
         }
@@ -267,7 +269,7 @@ updateSeparatorMode();
 // Hash navigation
 if (window.location.hash) {
   const el = document.getElementById(window.location.hash.slice(1));
-  if (el) requestAnimationFrame(() => el.scrollIntoView({ block: 'center' }));
+  if (el) requestAnimationFrame(() => el.scrollIntoView({ block: 'start' }));
 }
 
 let resizeTimer: ReturnType<typeof setTimeout>;
